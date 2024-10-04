@@ -10,11 +10,11 @@ dependencies = [
     "holoviews~=1.19.1",
     "daiquiri~=3.2.5.1",
     "diskcache~=5.6.3",
-    "notebook~=7.2.2",
     "pyd4~=0.3.9",
+    "click~=8.1.7",
 ]
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">= 3.11"
 dynamic = ["version"]
 
 [build-system]
@@ -28,14 +28,17 @@ source = "vcs"
 allow-direct-references = true
 
 [tool.hatch.build.hooks.vcs]
-version-file = "src/tseda/_version.py"
+version-file = "src/coveda/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/coveda"]
 
 [tool.rye]
 managed = true
-dev-dependencies = []
+dev-dependencies = [
+    "jupyter-console~=6.6.3",
+    "notebook~=7.2.2",
+]
 
 [project.scripts]
 "coveda" = "coveda:main"
@@ -56,7 +59,7 @@ select = [
 
 [tool.ruff.lint.isort]
 # so it knows to group first-party stuff last
-known-first-party = ["tseda"]
+known-first-party = ["coveda"]
 
 
 [tool.pyright]
