@@ -1,0 +1,81 @@
+[project]
+name = "coveda"
+description = "Add your description here"
+authors = [
+    { name = "Per Unneberg", email = "per.unneberg@scilifelab.se" }
+]
+dependencies = [
+    "panel~=1.5.1",
+    "hvplot~=0.11.0",
+    "holoviews~=1.19.1",
+    "daiquiri~=3.2.5.1",
+    "diskcache~=5.6.3",
+    "notebook~=7.2.2",
+    "pyd4~=0.3.9",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+dynamic = ["version"]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/tseda/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/coveda"]
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[project.scripts]
+"coveda" = "coveda:main"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 79
+
+[tool.ruff.lint]
+select = [
+  "A",    # warn about shadowing built-ins
+  "E",    # style stuff, whitespaces
+  "F",    # important pyflakes lints
+  "I",    # import sorting
+  "N",    # naming
+  "T100", # breakpoints (probably don't want these in prod!)
+]
+
+[tool.ruff.lint.isort]
+# so it knows to group first-party stuff last
+known-first-party = ["tseda"]
+
+
+[tool.pyright]
+venvPath = "."          # rye installs the venv in the current dir
+venv = ".venv"          #       in a folder called `.venv`
+include = ["src"]
+pythonVersion = "3.11"  # if library, specify the _lowest_ you support
+reportMissingTypeStubs = false
+reportAttributeAccessIssue = false
+reportCallIssue = false
+reportOptionalMemberAccess = false
+reportAssignmentType = false
+
+[tool.rye.scripts]
+fmt = "rye fmt"
+lint = "rye lint --fix"
+check = "pyright"
+test = "rye test"
+all = { chain = ["fmt", "lint", "check", "test"] }
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
