@@ -1,3 +1,7 @@
+import os
+import subprocess as sp
+from tempfile import mkdtemp
+
 import daiquiri
 import numpy as np
 import pandas as pd
@@ -27,19 +31,58 @@ GFF3_COLUMNS = [
 ]
 
 
+def d4hist(path, regions, max_bins):
+    """Compute histogram from d4. Call d4tools as the pyd4 interface
+    is not working properly."""
+    try:
+        temp_dir = mkdtemp()
+        temp_file = os.path.join(temp_dir, "regions.bed")
+        with open(temp_file, "w") as f:
+            for r in regions:
+                f.write(f"{r[0]}\t{r[1]}\t{r[2]}\n")
+            res = sp.run(
+                [
+                    "d4tools",
+                    "stat",
+                    "-s",
+                    "hist",
+                    "-r",
+                    temp_file,
+                    "--max-bin",
+                    str(max_bins),
+                    path,
+                ],
+                capture_output=True,
+            )
+    except sp.CalledProcessError as e:
+        logger.error(e)
+    data = pd.DataFrame(
+        [x.split() for x in res.stdout.decode("utf-8").split("\n") if x],
+        columns=["x", "counts"],
+    )
+    data.drop([0, data.shape[0] - 1], inplace=True)
+    data["x"] = data["x"].astype(int)
+    data["counts"] = data["counts"].astype(int)
+    return data
+
+
 def make_vector(df, sample_size):
     """Make vector from dataframe."""
     n = np.sum(df["counts"])
-    return np.random.choice(
-        df["x"].rx.value,
-        size=min(int(sample_size), n.rx.value),
-        p=df["counts"].rx.value / n.rx.value,
-    )
+    try:
+        data = np.random.choice(
+            df["x"].rx.value,
+            size=min(int(sample_size), n.rx.value),
+            p=df["counts"].rx.value / n.rx.value,
+        )
+    except ValueError:
+        data = None
+    return data
 
 
 def make_regions(path, annotation=None):
     d4 = D4File(path)
-    retval = {"genome": d4.chroms()}
+    retval = {"genome": [(x[0], 0, x[1]) for x in d4.chroms()]}
     if annotation is None:
         return d4, retval
     # Assume gff3 for now
@@ -59,15 +102,17 @@ def make_regions(path, annotation=None):
 def preprocess(path, annotation=None, max_bins=1_000):
     d4, regions = make_regions(path, annotation)
     dflist = []
-    genome_size = sum([x[1] for x in d4.chroms()])
+    genome_size = np.sum(x[1] for x in d4.chroms())
     for ft, reg in regions.items():
         logger.info("Processing %s", ft)
-        histl = d4.histogram(reg, 0, max_bins)
-        prefix_sums = sum(np.array(h.prefix_sum) for h in histl)
-        counts = np.diff(prefix_sums)
-        n = len(counts)
+        data = d4hist(path, reg, max_bins)
         d = pd.DataFrame(
-            {"path": path, "feature": ft, "x": np.arange(n), "counts": counts}
+            {
+                "path": path,
+                "feature": ft,
+                "x": data["x"],
+                "counts": data["counts"],
+            }
         )
         d["nbases"] = d["counts"] * d["x"]
         d["coverage"] = d["nbases"] / genome_size
