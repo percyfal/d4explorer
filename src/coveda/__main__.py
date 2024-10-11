@@ -1,6 +1,3 @@
-
-import logging
-
 import click
 import daiquiri
 
@@ -9,6 +6,7 @@ import panel as pn  # noqa
 
 from . import app  # noqa
 from .datastore import preprocess, DataStore  # noqa
+from .views import Histogram, BoxPlot, ViolinPlot, SummaryTable, Indicators  # noqa
 
 logger = daiquiri.getLogger("coveda")
 
@@ -18,7 +16,6 @@ def log_level(expose_value=False):
 
     def callback(ctx, param, value):
         no_log_filter = ctx.params.get("no_log_filter")
-        log_level = logging.getLevelName(value)
         if no_log_filter:
             logger = daiquiri.getLogger("root")
             logger.setLevel(value)
@@ -48,6 +45,9 @@ def cli():
 
 @cli.command()
 @click.argument("path", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--annotation-file", default=None, help="Annotation file in gff format"
+)
 @click.option("--port", default=8080, help="Port to serve on")
 @click.option(
     "--show/--no-show",
@@ -70,9 +70,13 @@ def cli():
 def serve(path, port, annotation_file, show, no_log_filter, max_bins):
     """Serve the app"""
     logger.info("Starting panel server")
-    data = preprocess(path, max_bins)
+    data = preprocess(path, annotation_file, max_bins)
 
-    app_ = app.App(datastore=DataStore(data=data), title="Coveda")
+    app_ = app.App(
+        datastore=DataStore(data=data, filters=["feature", "x"]),
+        views=[Indicators, SummaryTable, Histogram, BoxPlot, ViolinPlot],
+        title="Coveda",
+    )
     pn.serve(app_, port=port, show=show, verbose=False)
 
 

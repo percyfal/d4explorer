@@ -3,7 +3,6 @@ import param
 from panel.viewable import Viewer
 
 from .datastore import DataStore
-from .views import Histogram
 
 pn.extension("vega", throttled=True)
 
@@ -13,19 +12,19 @@ class App(Viewer):
 
     title = param.String()
 
-    # views = param.List()
+    views = param.List()
 
     def __init__(self, **params):
         super().__init__(**params)
-        self.views = [Histogram]
         updating = self.datastore.filtered.rx.updating()
         updating.rx.watch(
             lambda updating: pn.state.curdoc.hold()
             if updating
             else pn.state.curdoc.unhold()
         )
+        _views = [view(datastore=self.datastore) for view in self.views]
         self._views = pn.FlexBox(
-            *(view(datastore=self.datastore) for view in self.views),
+            *(v for v in _views),
             loading=updating,
         )
         self._template = pn.template.MaterialTemplate(title=self.title)
@@ -37,5 +36,11 @@ class App(Viewer):
             return self._template.servable()
         return self
 
+    @param.depends("views")
     def __panel__(self):
-        return pn.Row(self.datastore, self._views)
+        return pn.Column(
+            *[
+                pn.Row(self.datastore, *self._views[0:2]),
+                pn.Row(*self._views[2:]),
+            ],
+        )

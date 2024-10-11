@@ -60,6 +60,7 @@ numpy==2.1.1
     # via hvplot
     # via pandas
     # via pyd4
+    # via scipy
 packaging==24.1
     # via bokeh
     # via holoviews
@@ -96,6 +97,8 @@ pyyaml==6.0.2
     # via bokeh
 requests==2.32.3
     # via panel
+scipy==1.14.1
+    # via coveda
 six==1.16.0
     # via bleach
     # via python-dateutil
