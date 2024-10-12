@@ -20,7 +20,7 @@ def log_level(expose_value=False):
             logger = daiquiri.getLogger("root")
             logger.setLevel(value)
         else:
-            loggers = ["tseda", "cache", "bokeh", "tornado"]
+            loggers = ["coveda", "cache", "bokeh", "tornado"]
             for logname in loggers:
                 logger = daiquiri.getLogger(logname)
                 logger.setLevel(value)

@@ -45,6 +45,7 @@ dev-dependencies = [
 
 [project.scripts]
 "coveda" = "coveda:main"
+coveda-d4filter = "coveda.tools.d4filter:cli"
 
 [tool.ruff]
 target-version = "py312"
