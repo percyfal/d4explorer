@@ -41,6 +41,7 @@ class App(Viewer):
         return pn.Column(
             *[
                 pn.Row(self.datastore, *self._views[0:2]),
-                pn.Row(*self._views[2:]),
+                pn.Row(*self._views[2]),
+                pn.Row(*self._views[3:]),
             ],
         )

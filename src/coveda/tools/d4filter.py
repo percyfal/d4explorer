@@ -1,7 +1,10 @@
+import sys
 import click
 import daiquiri
 import numpy as np
+import pandas as pd
 from pyd4 import D4File
+from tqdm import tqdm
 
 daiquiri.setup(level="WARN")  # noqa
 
@@ -50,10 +53,18 @@ def cli(path, min_value, max_value):
     """Command line interface for d4filter. Prints filtered results in BED format to stdout."""
     logger.info("Running d4filter")
     d4 = D4File(path)
-    for chrom, chromlen in d4.chroms():
-        logger.info(f"Chromosome: {chrom}")
+    dflist = []
+    for chrom, chromlen in tqdm(d4.chroms()):
+        logger.debug(f"Chromosome: {chrom}")
         vals = d4[chrom]
         flags = (vals >= min_value) & (vals <= max_value)
         pos = np.where(flags)[0]
-        for p, v in zip(pos, vals[flags]):
-            print(f"{chrom}\t{p}\t{p+1}\t{v}")
+        df = pd.DataFrame({
+            "chrom": chrom,
+            "begin": pos,
+            "end": pos+1,
+            "value": vals[flags],
+        })
+        dflist.append(df)
+    df = pd.concat(dflist)
+    df.to_csv(sys.stdout, sep="\t", index=False, header=False)
