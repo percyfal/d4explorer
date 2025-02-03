@@ -4,6 +4,7 @@ import numpy as np
 import panel as pn
 import param
 import pandas as pd
+import random
 from panel.viewable import Viewer
 from bokeh.models import CustomJSHover
 
@@ -50,12 +51,10 @@ class Histogram(View):
         """
         )
         df = self.datastore.filtered
-
         p = df.hvplot.bar(
             x="x",
             y="counts",
             by="feature",
-            widget_location="bottom",
             fill_alpha=0.5,
             min_height=self.min_height,
             min_width=self.min_width,
@@ -78,9 +77,10 @@ class Histogram(View):
             responsive=True,
             rot=45,
             legend=None,
-        ).opts(legend_position="right")
-        print(dir(p), type(p))
-        return pn.FlexBox(p)
+        )
+        return pn.Column(
+            pn.pane.Markdown("## Coverage histogram"), pn.FlexBox(p)
+        )
 
 
 class BoxPlot(View):
@@ -171,23 +171,80 @@ class Indicators(View):
     def __panel__(self):
         df = self.datastore.filtered
         data = self.datastore.feature_data
-        return pn.FlexBox(
-            pn.indicators.Number(
-                value=np.sum(df.counts),
-                name="Selected feature size",
-                format="{value:,}",
-                font_size="20pt",
+
+        gdata = self.datastore.data
+        gdata = gdata[gdata["feature"] == "genome"]
+        gdata = gdata[gdata["x"] > 0]
+        x = random.choices(
+            gdata["x"].values, weights=gdata["counts"].values, k=10_000
+        )
+
+        return pn.Column(
+            pn.FlexBox(
+                pn.indicators.Number(
+                    value=np.sum(df.counts),
+                    name="Selected feature size",
+                    format="{value:,}",
+                    font_size="20pt",
+                ),
+                pn.indicators.Number(
+                    value=np.sum(data.counts),
+                    name="Total feature size",
+                    format="{value:,}",
+                    font_size="20pt",
+                ),
+                pn.indicators.Number(
+                    value=np.sum(df.counts) / np.sum(data.counts) * 100,
+                    name="Selected feature size (%)",
+                    format="{value:,.2f}",
+                    font_size="20pt",
+                ),
             ),
-            pn.indicators.Number(
-                value=np.sum(data.counts),
-                name="Total feature size",
-                format="{value:,}",
-                font_size="20pt",
-            ),
-            pn.indicators.Number(
-                value=np.sum(df.counts) / np.sum(data.counts) * 100,
-                name="Selected feature size (%)",
-                format="{value:,.2f}",
-                font_size="20pt",
+            pn.FlexBox(
+                pn.indicators.Number(
+                    value=np.mean(x),
+                    name="Mean coverage",
+                    format="{value:,.2f}",
+                    font_size="20pt",
+                ),
+                pn.indicators.Number(
+                    value=np.median(x),
+                    name="Median coverage",
+                    format="{value:,.2f}",
+                    font_size="20pt",
+                ),
+                pn.indicators.Number(
+                    value=np.std(x),
+                    name="Std coverage",
+                    format="{value:,.2f}",
+                    font_size="20pt",
+                ),
+                pn.indicators.Number(
+                    value=np.mean(x) * 0.8,
+                    name="80% coverage",
+                    format="{value:,.2f}",
+                    font_size="20pt",
+                ),
+                pn.indicators.Number(
+                    value=np.median(x) + np.std(x),
+                    name="median + 1sd",
+                    format="{value:,.2f}",
+                    font_size="20pt",
+                ),
+                pn.indicators.Number(
+                    value=np.median(x) + 2 * np.std(x),
+                    name="median + 2sd",
+                    format="{value:,.2f}",
+                    font_size="20pt",
+                ),
+                pn.widgets.TooltipIcon(
+                    value=(
+                        "The coverage ranges are computed from a "
+                        "random sample of 10,000 bases from the "
+                        "genome. The lower and upper suggested "
+                        "thresholds are defined as in Lou 2021 "
+                        "(10.1111/mec.16077)"
+                    )
+                ),
             ),
         )

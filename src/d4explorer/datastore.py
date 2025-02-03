@@ -10,7 +10,7 @@ import param
 from panel.viewable import Viewer
 from pyd4 import D4File
 
-logger = daiquiri.getLogger("coveda")
+logger = daiquiri.getLogger("d4explorer")
 
 CARD_STYLE = """
 :host {{

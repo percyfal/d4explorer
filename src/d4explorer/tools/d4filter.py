@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 daiquiri.setup(level="WARN")  # noqa
 
-logger = daiquiri.getLogger("coveda-d4filter")
+logger = daiquiri.getLogger("d4explorer-d4filter")
 
 
 def log_level(expose_value=False):
@@ -21,7 +21,7 @@ def log_level(expose_value=False):
             logger = daiquiri.getLogger("root")
             logger.setLevel(value)
         else:
-            loggers = ["coveda-d4filter"]
+            loggers = ["d4explorer-d4filter"]
             for logname in loggers:
                 logger = daiquiri.getLogger(logname)
                 logger.setLevel(value)

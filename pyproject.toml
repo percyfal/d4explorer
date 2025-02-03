@@ -1,6 +1,6 @@
 [project]
-name = "coveda"
-description = "Add your description here"
+name = "d4explorer"
+description = "Visual exploration of d4 coverage files"
 authors = [
     { name = "Per Unneberg", email = "per.unneberg@scilifelab.se" }
 ]
@@ -30,10 +30,10 @@ source = "vcs"
 allow-direct-references = true
 
 [tool.hatch.build.hooks.vcs]
-version-file = "src/coveda/_version.py"
+version-file = "src/d4explorer/_version.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/coveda"]
+packages = ["src/d4explorer"]
 
 [tool.rye]
 managed = true
@@ -45,8 +45,8 @@ dev-dependencies = [
 ]
 
 [project.scripts]
-"coveda" = "coveda:main"
-coveda-d4filter = "coveda.tools.d4filter:cli"
+"d4explorer" = "d4explorer:main"
+d4explorer-d4filter = "d4explorer.tools.d4filter:cli"
 
 [tool.ruff]
 target-version = "py312"
@@ -64,7 +64,7 @@ select = [
 
 [tool.ruff.lint.isort]
 # so it knows to group first-party stuff last
-known-first-party = ["coveda"]
+known-first-party = ["d4explorer"]
 
 
 [tool.pyright]
@@ -86,4 +86,4 @@ test = "rye test"
 all = { chain = ["fmt", "lint", "test"] }
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --ignore src/coveda/main.py"
+addopts = "--doctest-modules --ignore src/d4explorer/main.py"

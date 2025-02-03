@@ -15,7 +15,7 @@ RAW_CSS = """
         }
     """
 DEFAULT_PARAMS = {
-    "site": "coveda",
+    "site": "d4explorer",
     "theme_toggle": False,
 }
 

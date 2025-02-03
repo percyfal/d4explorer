@@ -1,10 +1,10 @@
-"""Helper module for serving the coveda app from the command line
+"""Helper module for serving the d4explorer app from the command line
 using panel serve.
 
-This module is used to serve the coveda app from the command line using panel
-serve. One use case is for development purposes where the --dev argument
-enables automated reloading of the app when the source code changes. To launch
-the app from the command line run:
+This module is used to serve the d4explorer app from the command line
+using panel serve. One use case is for development purposes where the
+--dev argument enables automated reloading of the app when the source
+code changes. To launch the app from the command line run:
 
 $ panel serve --dev --admin --show --args path/to/sum.d4
   --annotation-file path/to/annotation.gff3
@@ -13,15 +13,15 @@ See https://panel.holoviz.org/how_to/server/commandline.html for more
 information.
 """
 
-from coveda import app  # noqa
-from coveda import datastore  # noqa
-from coveda import views
+from d4explorer import app  # noqa
+from d4explorer import datastore  # noqa
+from d4explorer import views
 import daiquiri
 import sys
 from collections import deque
 
 daiquiri.setup(level="INFO")  # noqa
-logger = daiquiri.getLogger("coveda")
+logger = daiquiri.getLogger("d4explorer")
 
 
 if len(sys.argv) < 2:
@@ -56,7 +56,7 @@ app_ = app.App(
         views.BoxPlot,
         views.ViolinPlot,
     ],
-    title="Coveda",
+    title="D4explorer",
 )
 
 app_.view().servable()

@@ -8,7 +8,7 @@ from . import app  # noqa
 from .datastore import preprocess, DataStore  # noqa
 from .views import Histogram, BoxPlot, ViolinPlot, SummaryTable, Indicators  # noqa
 
-logger = daiquiri.getLogger("coveda")
+logger = daiquiri.getLogger("d4explorer")
 
 
 def log_level(expose_value=False):
@@ -20,7 +20,7 @@ def log_level(expose_value=False):
             logger = daiquiri.getLogger("root")
             logger.setLevel(value)
         else:
-            loggers = ["coveda", "cache", "bokeh", "tornado"]
+            loggers = ["d4explorer", "cache", "bokeh", "tornado"]
             for logname in loggers:
                 logger = daiquiri.getLogger(logname)
                 logger.setLevel(value)
@@ -40,7 +40,7 @@ def log_level(expose_value=False):
 
 @click.group()
 def cli():
-    """Command line interface for coveda."""
+    """Command line interface for d4explorer."""
 
 
 @cli.command()
@@ -72,7 +72,7 @@ def serve(path, port, annotation_file, show, no_log_filter, max_bins):
     app_ = app.App(
         datastore=DataStore(data=data, filters=["feature", "x"]),
         views=[Indicators, SummaryTable, Histogram, BoxPlot, ViolinPlot],
-        title="Coveda",
+        title="D4explorer",
     )
     pn.serve(app_.view(), port=port, show=show, verbose=False)
 
