@@ -37,6 +37,7 @@ def d4hist(path, regions, max_bins):
     try:
         temp_dir = mkdtemp()
         temp_file = os.path.join(temp_dir, "regions.bed")
+        logger.info("Writing regions to %s", temp_file)
         with open(temp_file, "w") as f:
             for r in regions:
                 f.write(f"{r[0]}\t{r[1]}\t{r[2]}\n")

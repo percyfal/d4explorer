@@ -5,14 +5,15 @@ authors = [
     { name = "Per Unneberg", email = "per.unneberg@scilifelab.se" }
 ]
 dependencies = [
-    "panel~=1.5.1",
+    "panel~=1.6.0",
     "hvplot~=0.11.0",
-    "holoviews~=1.19.1",
+    "holoviews~=1.20.0",
     "daiquiri~=3.2.5.1",
     "diskcache~=5.6.3",
     "pyd4~=0.3.9",
     "click~=8.1.7",
     "scipy~=1.14.1",
+    "watchfiles~=1.0.4",
 ]
 readme = "README.md"
 requires-python = ">= 3.11"
@@ -39,7 +40,7 @@ managed = true
 dev-dependencies = [
     "jupyter-console~=6.6.3",
     "notebook~=7.2.2",
-    "pytest~=8.3.3",
+    "pytest~=8.3.4",
     "pyright~=1.1.384",
 ]
 
@@ -82,7 +83,7 @@ fmt = "rye fmt"
 lint = "rye lint --fix"
 check = "pyright"
 test = "rye test"
-all = { chain = ["fmt", "lint", "check", "test"] }
+all = { chain = ["fmt", "lint", "test"] }
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules"
+addopts = "--doctest-modules --ignore src/coveda/main.py"

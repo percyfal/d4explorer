@@ -55,9 +55,6 @@ def cli():
     help="Launch a web-browser showing the app",
 )
 @click.option(
-    "--annotation-file", default=None, help="Annotation file in gff format"
-)
-@click.option(
     "--no-log-filter",
     default=False,
     is_flag=True,
@@ -77,7 +74,7 @@ def serve(path, port, annotation_file, show, no_log_filter, max_bins):
         views=[Indicators, SummaryTable, Histogram, BoxPlot, ViolinPlot],
         title="Coveda",
     )
-    pn.serve(app_, port=port, show=show, verbose=False)
+    pn.serve(app_.view(), port=port, show=show, verbose=False)
 
 
 if __name__ == "__main__":

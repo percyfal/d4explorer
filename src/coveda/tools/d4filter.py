@@ -1,4 +1,5 @@
 import sys
+
 import click
 import daiquiri
 import numpy as np
@@ -50,7 +51,8 @@ def log_level(expose_value=False):
 )
 @log_level()
 def cli(path, min_value, max_value):
-    """Command line interface for d4filter. Prints filtered results in BED format to stdout."""
+    """Command line interface for d4filter. Prints filtered results in
+    BED format to stdout."""
     logger.info("Running d4filter")
     d4 = D4File(path)
     dflist = []
@@ -59,12 +61,14 @@ def cli(path, min_value, max_value):
         vals = d4[chrom]
         flags = (vals >= min_value) & (vals <= max_value)
         pos = np.where(flags)[0]
-        df = pd.DataFrame({
-            "chrom": chrom,
-            "begin": pos,
-            "end": pos+1,
-            "value": vals[flags],
-        })
+        df = pd.DataFrame(
+            {
+                "chrom": chrom,
+                "begin": pos,
+                "end": pos + 1,
+                "value": vals[flags],
+            }
+        )
         dflist.append(df)
     df = pd.concat(dflist)
     df.to_csv(sys.stdout, sep="\t", index=False, header=False)

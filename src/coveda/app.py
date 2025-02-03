@@ -6,6 +6,19 @@ from .datastore import DataStore
 
 pn.extension("vega", throttled=True)
 
+RAW_CSS = """
+        .sidenav#sidebar {
+            background-color: WhiteSmoke;
+        }
+        .title {
+            font-size: var(--type-ramp-plus-2-font-size);
+        }
+    """
+DEFAULT_PARAMS = {
+    "site": "coveda",
+    "theme_toggle": False,
+}
+
 
 class App(Viewer):
     datastore = param.ClassSelector(class_=DataStore)
@@ -27,21 +40,46 @@ class App(Viewer):
             *(v for v in _views),
             loading=updating,
         )
-        self._template = pn.template.MaterialTemplate(title=self.title)
-        self._template.sidebar.append(self.datastore)
-        self._template.main.append(self._views)
+        self.unit = _views[2].param.unit
 
-    def servable(self):
-        if pn.state.served:
-            return self._template.servable()
-        return self
+    #     self._template = pn.template.MaterialTemplate(title=self.title)
+    #     self._template.sidebar.append(self.datastore)
+    #     self._template.main.append(self._views)
+
+    # def servable(self):
+    #     if pn.state.served:
+    #         return self._template.servable()
+    #     return self
 
     @param.depends("views")
-    def __panel__(self):
-        return pn.Column(
-            *[
-                pn.Row(self.datastore, *self._views[0:2]),
-                pn.Row(*self._views[2]),
-                pn.Row(*self._views[3:]),
-            ],
+    def view(self):
+        """Creates the main application view.
+
+        Returns:
+            pn.Column: A Panel Column containing the datastore and views.
+        """
+        return pn.template.FastListTemplate(
+            title=self.title,
+            main=pn.Column(
+                *[
+                    pn.Column(
+                        self._views[0],
+                        pn.Row(*[self._views[2], self._views[1]]),
+                    ),
+                    pn.Row(*self._views[3:]),
+                ]
+            ),
+            sidebar=[self.datastore, self.unit],
+            raw_css=[RAW_CSS],
+            **DEFAULT_PARAMS,
         )
+
+    # @param.depends("views")
+    # def __panel__(self):
+    #     return pn.Column(
+    #         *[
+    #             pn.Row(self.datastore, *self._views[0:2]),
+    #             pn.Row(*self._views[2]),
+    #             pn.Row(*self._views[3:]),
+    #         ],
+    #     )

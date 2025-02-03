@@ -10,6 +10,7 @@ from bokeh.models import CustomJSHover
 from .datastore import DataStore
 
 hv.extension("bokeh")
+pn.extension("tabulator")
 
 
 def make_vector(df, sample_size):
@@ -33,6 +34,8 @@ class Histogram(View):
         default="Mbp", doc="Unit of bins", objects=["bp", "Kbp", "Mbp", "Gbp"]
     )
     factors = {"bp": 1, "Kbp": 1e3, "Mbp": 1e6, "Gbp": 1e9}
+    min_height = param.Integer(default=400)
+    min_width = param.Integer(default=600)
 
     @param.depends("unit")
     def __panel__(self):
@@ -47,13 +50,15 @@ class Histogram(View):
         """
         )
         df = self.datastore.filtered
+
         p = df.hvplot.bar(
             x="x",
             y="counts",
             by="feature",
+            widget_location="bottom",
             fill_alpha=0.5,
             min_height=self.min_height,
-            min_width=self.min_height,
+            min_width=self.min_width,
             title="Coverage Histogram",
             xticks=None,
             xaxis=None,
@@ -72,8 +77,10 @@ class Histogram(View):
             },
             responsive=True,
             rot=45,
+            legend=None,
         ).opts(legend_position="right")
-        return pn.FlexBox(self.param.unit, p)
+        print(dir(p), type(p))
+        return pn.FlexBox(p)
 
 
 class BoxPlot(View):
@@ -149,13 +156,15 @@ class SummaryTable(View):
         data = self.datastore.filtered.describe(
             percentiles=np.arange(0, 1, 0.1)
         )
-        return pn.widgets.Tabulator(
+        p = pn.widgets.Tabulator(
             data,
             pagination="remote",
             page_size=20,
             margin=10,
-            sizing_mode="stretch_both",
+            layout="fit_data_table",
+            # sizing_mode="stretch_both",
         )
+        return pn.Column(pn.pane.Markdown("## Summary statistics table"), p)
 
 
 class Indicators(View):
@@ -167,15 +176,18 @@ class Indicators(View):
                 value=np.sum(df.counts),
                 name="Selected feature size",
                 format="{value:,}",
+                font_size="20pt",
             ),
             pn.indicators.Number(
                 value=np.sum(data.counts),
                 name="Total feature size",
                 format="{value:,}",
+                font_size="20pt",
             ),
             pn.indicators.Number(
                 value=np.sum(df.counts) / np.sum(data.counts) * 100,
                 name="Selected feature size (%)",
                 format="{value:,.2f}",
+                font_size="20pt",
             ),
         )
