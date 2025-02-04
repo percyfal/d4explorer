@@ -39,23 +39,31 @@ while len(arglist) > 0:
         args["annotation_file"] = arglist.popleft()
     elif arg == "--max-bins":
         args["max_bins"] = int(arglist.popleft())
+    elif arg == "--threads":
+        args["threads"] = int(arglist.popleft())
     elif not arg.startswith("-"):
         path = arg
 
 logger.info("Reading data from %s", path)
-data = datastore.preprocess(
-    path, args.get("annotation_file", None), args.get("max_bins", 1000)
+data, regions = datastore.preprocess(
+    path,
+    annotation=args.get("annotation_file", None),
+    max_bins=args.get("max_bins", 1000),
+    threads=args.get("threads", 1),
 )
 
 app_ = app.App(
-    datastore=datastore.DataStore(data=data, filters=["feature", "x"]),
-    views=[
-        views.Indicators,
-        views.SummaryTable,
-        views.Histogram,
-        views.BoxPlot,
-        views.ViolinPlot,
-    ],
+    datastore=datastore.DataStore(
+        data=data, filters=["feature", "x"], regions=regions
+    ),
+    views={
+        "indicators": views.Indicators,
+        "summarytable": views.SummaryTable,
+        "featuretable": views.FeatureTable,
+        "histogram": views.Histogram,
+        "boxplot": views.BoxPlot,
+        "violinplot": views.ViolinPlot,
+    },
     title="D4explorer",
 )
 

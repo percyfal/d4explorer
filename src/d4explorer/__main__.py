@@ -6,7 +6,14 @@ import panel as pn  # noqa
 
 from . import app  # noqa
 from .datastore import preprocess, DataStore  # noqa
-from .views import Histogram, BoxPlot, ViolinPlot, SummaryTable, Indicators  # noqa
+from .views import (  # noqa
+    Histogram,
+    BoxPlot,
+    ViolinPlot,
+    SummaryTable,
+    Indicators,
+    FeatureTable,
+)
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -60,19 +67,33 @@ def cli():
     is_flag=True,
     help="Do not filter the output log (advanced debugging only)",
 )
-@log_level()
 @click.option(
     "--max-bins", default=1000, help="Maximum number of bins to display"
 )
-def serve(path, port, annotation_file, show, no_log_filter, max_bins):
+@click.option(
+    "--threads", default=1, help="Number of threads to use for pre-processing"
+)
+@log_level()
+def serve(path, port, annotation_file, show, no_log_filter, max_bins, threads):
     """Serve the app"""
     logger.info("Starting panel server")
-    data = preprocess(path, annotation_file, max_bins)
+    data, regions = preprocess(
+        path, annotation=annotation_file, max_bins=max_bins, threads=threads
+    )
 
     app_ = app.App(
-        datastore=DataStore(data=data, filters=["feature", "x"]),
-        views=[Indicators, SummaryTable, Histogram, BoxPlot, ViolinPlot],
-        title="D4explorer",
+        datastore=DataStore(
+            data=data, filters=["feature", "x"], regions=regions
+        ),
+        views={
+            "indicators": Indicators,
+            "summarytable": SummaryTable,
+            "featuretable": FeatureTable,
+            "histogram": Histogram,
+            "boxplot": BoxPlot,
+            "violinplot": ViolinPlot,
+        },
+        title=f"D4explorer: {path}",
     )
     pn.serve(app_.view(), port=port, show=show, verbose=False)
 

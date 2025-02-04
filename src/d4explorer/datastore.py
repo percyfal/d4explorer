@@ -1,13 +1,15 @@
+import concurrent.futures
 import os
 import subprocess as sp
+from dataclasses import dataclass
 from tempfile import mkdtemp
+from threading import BoundedSemaphore
 
 import daiquiri
 import numpy as np
 import pandas as pd
 import panel as pn
 import param
-from tqdm import tqdm
 from panel.viewable import Viewer
 from pyd4 import D4File
 
@@ -32,30 +34,65 @@ GFF3_COLUMNS = [
 ]
 
 
-def d4hist(path, regions, max_bins):
+def convert_to_si_suffix(number):
+    """Convert a number to a string with an SI suffix."""
+    suffixes = [" ", "kbp", "Mbp", "Gbp", "Tbp"]
+    power = len(str(int(number))) // 3
+    return f"{number / 1000 ** power:.1f} {suffixes[power]}"
+
+
+class MaxQueuePool:
+    """This Class wraps a concurrent.futures.Executor limiting the
+    size of its task queue.
+
+    If `max_queue_size` tasks are submitted, the next call to submit
+    will block until a previously submitted one is completed.
+
+    cf https://gist.github.com/noxdafox/4150eff0059ea43f6adbdd66e5d5e87e
+    """
+
+    def __init__(self, executor, *, max_queue_size, max_workers=None):
+        logger.info(
+            "Initializing queue with %i queue slots, %i workers",
+            max_queue_size,
+            max_workers,
+        )
+        self.pool = executor(max_workers=max_workers)
+        self.pool_queue = BoundedSemaphore(max_queue_size)
+
+    def submit(self, fn, *args, **kwargs):
+        """Submit a new task to the pool. This will block if the queue
+        is full"""
+        self.pool_queue.acquire()  # pylint: disable=consider-using-with
+        future = self.pool.submit(fn, *args, **kwargs)
+        future.add_done_callback(self.pool_queue_callback)
+
+        return future
+
+    def pool_queue_callback(self, _):
+        """Called when a future is done. Releases one queue slot."""
+        self.pool_queue.release()
+
+
+def d4hist(args):
     """Compute histogram from d4. Call d4tools as the pyd4 interface
     is not working properly."""
+    path, regions, max_bins = args
     try:
-        temp_dir = mkdtemp()
-        temp_file = os.path.join(temp_dir, "regions.bed")
-        logger.info("Writing regions to %s", temp_file)
-        with open(temp_file, "w") as f:
-            for r in regions:
-                f.write(f"{r[0]}\t{r[1]}\t{r[2]}\n")
-            res = sp.run(
-                [
-                    "d4tools",
-                    "stat",
-                    "-s",
-                    "hist",
-                    "-r",
-                    temp_file,
-                    "--max-bin",
-                    str(max_bins),
-                    path,
-                ],
-                capture_output=True,
-            )
+        res = sp.run(
+            [
+                "d4tools",
+                "stat",
+                "-s",
+                "hist",
+                "-r",
+                str(regions.temp_file),
+                "--max-bin",
+                str(max_bins),
+                path,
+            ],
+            capture_output=True,
+        )
     except sp.CalledProcessError as e:
         logger.error(e)
     data = pd.DataFrame(
@@ -65,7 +102,7 @@ def d4hist(path, regions, max_bins):
     data.drop([0, data.shape[0] - 1], inplace=True)
     data["x"] = data["x"].astype(int)
     data["counts"] = data["counts"].astype(int)
-    return data
+    return data, regions
 
 
 def make_vector(df, sample_size):
@@ -83,8 +120,14 @@ def make_vector(df, sample_size):
 
 
 def make_regions(path, annotation=None):
+    columns = ["seqid", "start", "end"]
     d4 = D4File(path)
-    retval = {"genome": [(x[0], 0, x[1]) for x in d4.chroms()]}
+
+    genome = Feature(
+        "genome",
+        pd.DataFrame([(x[0], 0, x[1]) for x in d4.chroms()], columns=columns),
+    )
+    retval = {"genome": genome}
     if annotation is None:
         return d4, retval
     # Assume gff3 for now
@@ -93,26 +136,39 @@ def make_regions(path, annotation=None):
         annotation, names=GFF3_COLUMNS, comment="#", header=None, sep="\t"
     )
     for ft, reg in df_annot.groupby("type"):
-        retval[ft] = list(
-            reg[["seqid", "start", "end"]].itertuples(index=False, name=None)
-        )
+        retval[ft] = Feature(ft, reg[columns])
     logger.info("Made annotation regions")
     return d4, retval
 
 
 @pn.cache(ttl=60 * 60 * 24, to_disk=True)
-def preprocess(path, annotation=None, max_bins=1_000):
+def preprocess(path, *, annotation=None, max_bins=1_000, threads=1):
     d4, regions = make_regions(path, annotation)
     dflist = []
     genome_size = np.sum(x[1] for x in d4.chroms())
-    pbar = tqdm(regions.items())
-    for ft, reg in pbar:
-        pbar.set_description("Processing %s" % ft)
-        data = d4hist(path, reg, max_bins)
+    futures = []
+    pool = MaxQueuePool(
+        concurrent.futures.ProcessPoolExecutor,
+        max_workers=threads,
+        max_queue_size=int(2 * threads),
+    )
+
+    def _make_processes():
+        for reg in regions.values():
+            yield path, reg, max_bins
+
+    generator = _make_processes()
+
+    for args in generator:
+        futures.append(pool.submit(d4hist, args))
+
+    dflist = []
+    for x in futures:
+        data, reg = x.result()
         d = pd.DataFrame(
             {
                 "path": path,
-                "feature": ft,
+                "feature": reg.name,
                 "x": data["x"],
                 "counts": data["counts"],
             }
@@ -124,13 +180,43 @@ def preprocess(path, annotation=None, max_bins=1_000):
     logger.info("Computing summary dataframe")
     df = pd.concat(dflist)
     logger.info("Computed summary dataframe")
-    return df
+    return df, regions
+
+
+@dataclass
+class Feature:
+    name: str
+    data: pd.DataFrame
+
+    def __post_init__(self):
+        assert all(self.data.columns.values == ["seqid", "start", "end"])
+        self._total = np.sum(self.data["end"] - self.data["start"])
+        temp_dir = mkdtemp()
+        self._temp_file = os.path.join(temp_dir, "regions.bed")
+        self.write()
+
+    @property
+    def total(self):
+        return self._total
+
+    @property
+    def temp_file(self):
+        return self._temp_file
+
+    def write(self):
+        logger.info("Writing regions to %s", self.temp_file)
+        self.data.to_csv(self.temp_file, sep="\t", index=False)
+
+    def format(self):
+        return convert_to_si_suffix(self.total)
 
 
 class DataStore(Viewer):
     data = param.DataFrame()
 
     filters = param.List(constant=True)
+
+    regions = param.Dict(constant=True)
 
     def __init__(self, **params):
         super().__init__(**params)

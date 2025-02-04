@@ -147,6 +147,31 @@ class ViolinPlot(View):
         return pn.FlexBox(self.param.samplesize, p)
 
 
+class FeatureTable(View):
+    columns = param.List(default=["feature", "size", "SI"])
+
+    def __panel__(self):
+        data = []
+        for ft, ft_data in self.datastore.regions.items():
+            data.append(
+                {
+                    "feature": ft,
+                    "SI": ft_data.format(),
+                    "size": ft_data.total,
+                }
+            )
+        df = pd.DataFrame(data)
+        df.set_index(["feature"], inplace=True)
+        p = pn.widgets.Tabulator(
+            df,
+            pagination="remote",
+            page_size=20,
+            margin=10,
+            layout="fit_data_table",
+        )
+        return pn.Column(pn.pane.Markdown("## Feature table"), p)
+
+
 class SummaryTable(View):
     columns = param.List(
         default=["feature", "x", "counts", "nbases", "coverage"]
@@ -162,7 +187,6 @@ class SummaryTable(View):
             page_size=20,
             margin=10,
             layout="fit_data_table",
-            # sizing_mode="stretch_both",
         )
         return pn.Column(pn.pane.Markdown("## Summary statistics table"), p)
 
