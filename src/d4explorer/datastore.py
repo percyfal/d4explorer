@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import panel as pn
 import param
+from tqdm import tqdm
 from panel.viewable import Viewer
 from pyd4 import D4File
 
@@ -104,8 +105,9 @@ def preprocess(path, annotation=None, max_bins=1_000):
     d4, regions = make_regions(path, annotation)
     dflist = []
     genome_size = np.sum(x[1] for x in d4.chroms())
-    for ft, reg in regions.items():
-        logger.info("Processing %s", ft)
+    pbar = tqdm(regions.items())
+    for ft, reg in pbar:
+        pbar.set_description("Processing %s" % ft)
         data = d4hist(path, reg, max_bins)
         d = pd.DataFrame(
             {
