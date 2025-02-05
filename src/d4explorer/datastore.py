@@ -2,6 +2,7 @@ import concurrent.futures
 import os
 import subprocess as sp
 from dataclasses import dataclass
+from pathlib import Path
 from tempfile import mkdtemp
 from threading import BoundedSemaphore
 
@@ -12,6 +13,7 @@ import panel as pn
 import param
 from panel.viewable import Viewer
 from pyd4 import D4File
+from tqdm import tqdm
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -39,6 +41,14 @@ def convert_to_si_suffix(number):
     suffixes = [" ", "kbp", "Mbp", "Gbp", "Tbp"]
     power = len(str(int(number))) // 3
     return f"{number / 1000 ** power:.1f} {suffixes[power]}"
+
+
+def cache_key(path: Path, max_bins: int) -> str:
+    if not isinstance("path", Path):
+        path = Path(path)
+    size = path.stat().st_size
+    absname = os.path.normpath(str(path.absolute()))
+    return f"d4explorer:{absname}:{size}:{max_bins}"
 
 
 class MaxQueuePool:
@@ -141,7 +151,7 @@ def make_regions(path, annotation=None):
     return d4, retval
 
 
-@pn.cache(ttl=60 * 60 * 24, to_disk=True)
+# @pn.cache(ttl=60 * 60 * 24, to_disk=True)
 def preprocess(path, *, annotation=None, max_bins=1_000, threads=1):
     d4, regions = make_regions(path, annotation)
     dflist = []
@@ -163,7 +173,7 @@ def preprocess(path, *, annotation=None, max_bins=1_000, threads=1):
         futures.append(pool.submit(d4hist, args))
 
     dflist = []
-    for x in futures:
+    for x in tqdm(futures):
         data, reg = x.result()
         d = pd.DataFrame(
             {
@@ -177,7 +187,6 @@ def preprocess(path, *, annotation=None, max_bins=1_000, threads=1):
         d["coverage"] = d["nbases"] / genome_size
         dflist.append(d)
 
-    logger.info("Computing summary dataframe")
     df = pd.concat(dflist)
     logger.info("Computed summary dataframe")
     return df, regions
