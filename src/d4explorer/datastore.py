@@ -265,8 +265,6 @@ class DataStore(Viewer):
                 except AttributeError:
                     options = dfx[filt].cat.categories.to_list()
                 value = []
-                if filt == "feature":
-                    value = ["genome"]
                 widget = pn.widgets.MultiChoice(
                     name=filt, options=options, value=value
                 )
