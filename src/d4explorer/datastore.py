@@ -2,7 +2,6 @@ import concurrent.futures
 import os
 import subprocess as sp
 from dataclasses import dataclass
-from pathlib import Path
 from tempfile import mkdtemp
 from threading import BoundedSemaphore
 
@@ -35,20 +34,37 @@ GFF3_COLUMNS = [
     "attributes",
 ]
 
+KNOWN_FEATURES = [
+    "genome",
+    "intergenic",
+    "gene",
+    "mRNA",
+    "CDS",
+    "exon",
+    "UTR",
+    "five_prime_UTR",
+    "three_prime_UTR",
+]
+
+
+def order_features(values):
+    order = []
+    if isinstance(values, np.ndarray):
+        values = values.tolist()
+    for ft in KNOWN_FEATURES:
+        if ft in values:
+            order.append(ft)
+            values.remove(ft)
+    if len(values) > 0:
+        order.extend(values)
+    return order
+
 
 def convert_to_si_suffix(number):
     """Convert a number to a string with an SI suffix."""
     suffixes = [" ", "kbp", "Mbp", "Gbp", "Tbp"]
     power = len(str(int(number))) // 3
     return f"{number / 1000 ** power:.1f} {suffixes[power]}"
-
-
-def cache_key(path: Path, max_bins: int) -> str:
-    if not isinstance("path", Path):
-        path = Path(path)
-    size = path.stat().st_size
-    absname = os.path.normpath(str(path.absolute()))
-    return f"d4explorer:{absname}:{size}:{max_bins}"
 
 
 class MaxQueuePool:
@@ -244,13 +260,21 @@ class DataStore(Viewer):
                 )
                 condition = dfx[filt].between(*widget.rx())
             else:
-                options = dfx[filt].unique().tolist()
+                try:
+                    options = dfx[filt].unique().tolist()
+                except AttributeError:
+                    options = dfx[filt].cat.categories.to_list()
                 widget = pn.widgets.MultiChoice(name=filt, options=options)
                 condition = dfx[filt].isin(
                     widget.rx().rx.where(widget, options)
                 )
                 if filt == "feature":
                     datax = datax[condition]
+                if filt == "path":
+                    i = dfx[filt].isin(
+                        widget.rx().rx.where(widget, [options[0]])
+                    )
+                    datax = datax[i]
             dfx = dfx[condition]
             widgets.append(widget)
         self.filtered = dfx

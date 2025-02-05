@@ -7,9 +7,11 @@ from click.decorators import FC
 
 daiquiri.setup(level="WARN")  # noqa
 import panel as pn  # noqa
+import pandas as pd  # noqa
 
 from . import app  # noqa
-import datastore  # noqa
+from d4explorer import datastore  # noqa
+from d4explorer import cache  # noqa
 from .views import (  # noqa
     Histogram,
     BoxPlot,
@@ -64,7 +66,7 @@ def path_argument(
     exists: bool = True, dir_okay: bool = False
 ) -> Callable[[FC], FC]:
     return click.argument(
-        "path", type=click.Path(exists=exists, dir_okay=dir_okay)
+        "path", type=click.Path(exists=exists, dir_okay=dir_okay), nargs=-1
     )
 
 
@@ -102,43 +104,27 @@ def show_option(default: bool = True) -> Callable[[FC], FC]:
     )
 
 
-@click.group()
-def cli():
-    """Command line interface for d4explorer."""
-
-
-@cli.command()
-@path_argument()
-@port_option()
-@annotation_file_option()
-@show_option()
-@threads_option()
-@max_bins_option()
-@log_filter_option()
-@log_level()
-def serve(path, port, annotation_file, show, threads, max_bins):
-    """Serve the app"""
+def _serve(path, max_bins, servable=False, **kw):
     logger.info("Starting panel server")
-    key = datastore.cache_key(path, max_bins)
+    dlist = []
+    for p in path:
+        logger.info("Loading coverage for %s", p)
+        key = cache.cache_key(p, max_bins)
 
-    if key not in pn.state.cache:
-        logger.error("cache key not found")
-        logger.error("Run d4explorer preprocess first")
-        sys.exit(1)
+        if key not in cache.cache:
+            logger.error("cache key not found")
+            logger.error("Run `d4explorer preprocess %s` first", p)
+            sys.exit(1)
 
-    data, regions = pn.state.as_cached(
-        key,
-        datastore.preprocess,
-        path,
-        annotation=annotation_file,
-        max_bins=max_bins,
-        threads=threads,
+        # TODO: make sure regions are identical for all datasets
+        data, regions = cache.cache[key]
+        dlist.append(data)
+    data = pd.concat(dlist)
+    ds = datastore.DataStore(
+        data=data, filters=["feature", "x", "path"], regions=regions
     )
-
     app_ = app.App(
-        datastore=datastore.DataStore(
-            data=data, filters=["feature", "x"], regions=regions
-        ),
+        datastore=ds,
         views={
             "indicators": Indicators,
             "summarytable": SummaryTable,
@@ -147,9 +133,34 @@ def serve(path, port, annotation_file, show, threads, max_bins):
             "boxplot": BoxPlot,
             "violinplot": ViolinPlot,
         },
-        title=f"D4explorer: {path}",
+        title="Exploratory data analysis of d4 files",
     )
-    pn.serve(app_.view(), port=port, show=show, verbose=False)
+    if servable:
+        return app_.view().servable()
+    return pn.serve(app_.view(), **kw)
+
+
+@click.group()
+def cli():
+    """Command line interface for d4explorer."""
+
+
+@cli.command()
+@path_argument()
+@port_option()
+@show_option()
+@threads_option()
+@max_bins_option()
+@log_filter_option()
+@log_level()
+@click.option(
+    "--servable", is_flag=True, default=False, help="Make app servable"
+)
+def serve(path, port, show, threads, max_bins, servable):
+    """Serve the app"""
+    _ = _serve(
+        path, max_bins, servable=servable, port=port, show=show, verbose=False
+    )
 
 
 @cli.command()
@@ -160,15 +171,19 @@ def serve(path, port, annotation_file, show, threads, max_bins):
 @log_filter_option()
 @log_level()
 def preprocess(path, annotation_file, threads, max_bins):
-    key = datastore.cache_key(path, max_bins)
-    if key in pn.state.cache:
-        logger.info("Preprocessing is cached")
-        sys.exit(0)
+    """Preprocess data for the app"""
+    for p in path:
+        logger.info("Preprocessing %s", p)
+        key = cache.cache_key(p, max_bins)
 
-    data, regions = datastore.preprocess(
-        path, annotation=annotation_file, max_bins=max_bins, threads=threads
-    )
-    pn.state.cache[key] = data, regions
+        if key in cache.cache:
+            logger.info("Preprocessing is cached")
+            continue
+
+        data, regions = datastore.preprocess(
+            p, annotation=annotation_file, max_bins=max_bins, threads=threads
+        )
+        cache.cache[key] = data, regions
 
 
 if __name__ == "__main__":

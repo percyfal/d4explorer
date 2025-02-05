@@ -31,9 +31,13 @@ arglist = deque(sys.argv)
 arglist.popleft()
 argfun = arglist.popleft()
 if argfun == "serve":
+    arglist.append("--servable")
     fun = serve
 elif argfun == "preprocess":
     fun = preprocess
+else:
+    fun = serve
+    arglist.append("--help")
 
 try:
     fun(arglist, standalone_mode=False)
