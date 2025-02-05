@@ -167,7 +167,6 @@ def make_regions(path, annotation=None):
     return d4, retval
 
 
-# @pn.cache(ttl=60 * 60 * 24, to_disk=True)
 def preprocess(path, *, annotation=None, max_bins=1_000, threads=1):
     d4, regions = make_regions(path, annotation)
     dflist = []
@@ -247,6 +246,7 @@ class DataStore(Viewer):
         super().__init__(**params)
         dfx = self.param.data.rx()
         datax = self.param.data.rx()
+        self._paths = datax.rx.value["path"].unique().tolist()
         widgets = []
         for filt in self.filters:
             dtype = self.data.dtypes[filt]
@@ -264,7 +264,12 @@ class DataStore(Viewer):
                     options = dfx[filt].unique().tolist()
                 except AttributeError:
                     options = dfx[filt].cat.categories.to_list()
-                widget = pn.widgets.MultiChoice(name=filt, options=options)
+                value = []
+                if filt == "feature":
+                    value = ["genome"]
+                widget = pn.widgets.MultiChoice(
+                    name=filt, options=options, value=value
+                )
                 condition = dfx[filt].isin(
                     widget.rx().rx.where(widget, options)
                 )
@@ -282,10 +287,15 @@ class DataStore(Viewer):
         self.feature_data = datax
         self._widgets = widgets
 
+    @property
+    def paths(self):
+        return self._paths
+
     def __panel__(self):
-        return pn.Column(
+        filters = pn.Column(
             "## Filters",
             *self._widgets,
             stylesheets=[CARD_STYLE.format(padding="5px 10px")],
             margin=10,
         )
+        return pn.Column(filters)
