@@ -10,6 +10,7 @@ import panel as pn  # noqa
 import pandas as pd  # noqa
 
 from . import app  # noqa
+from . import __version__  # noqa
 from d4explorer import datastore  # noqa
 from d4explorer import cache  # noqa
 from .views import (  # noqa
@@ -146,6 +147,7 @@ def _serve(path, max_bins, servable=False, **kw):
 
 
 @click.group()
+@click.version_option(version=__version__)
 def cli():
     """Command line interface for d4explorer."""
 

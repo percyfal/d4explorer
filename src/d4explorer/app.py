@@ -2,6 +2,7 @@ import panel as pn
 import param
 from panel.viewable import Viewer
 
+from . import __version__
 from .datastore import DataStore
 
 pn.extension("vega", throttled=True)
@@ -47,6 +48,12 @@ class App(Viewer):
         self._views = pn.FlexBox(*(v for v in _views), loading=updating)
         self.unit = _views[1].param.unit
 
+    @property
+    def version(self):
+        return pn.pane.Markdown(
+            f"d4explorer, {__version__}", styles={"font_size": "18pt"}
+        )
+
     @param.depends("views")
     def view(self):
         """Creates the main application view.
@@ -67,7 +74,7 @@ class App(Viewer):
                     ),
                 ]
             ),
-            sidebar=[self.datastore, self.unit],
+            sidebar=[self.version, self.datastore, self.unit],
             raw_css=[RAW_CSS],
             **DEFAULT_PARAMS,
         )

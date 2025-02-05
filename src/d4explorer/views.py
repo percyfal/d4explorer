@@ -11,6 +11,7 @@ from holoviews.plotting.util import process_cmap
 
 from .datastore import DataStore, order_features
 
+
 hv.extension("bokeh")
 pn.extension("tabulator")
 
