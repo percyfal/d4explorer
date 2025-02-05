@@ -63,10 +63,10 @@ def log_level(expose_value: bool = False) -> Callable[[FC], FC]:
 
 
 def path_argument(
-    exists: bool = True, dir_okay: bool = False
+    exists: bool = True, dir_okay: bool = False, nargs: int = 1
 ) -> Callable[[FC], FC]:
     return click.argument(
-        "path", type=click.Path(exists=exists, dir_okay=dir_okay), nargs=-1
+        "path", type=click.Path(exists=exists, dir_okay=dir_okay), nargs=1
     )
 
 
@@ -107,7 +107,8 @@ def show_option(default: bool = True) -> Callable[[FC], FC]:
 def _serve(path, max_bins, servable=False, **kw):
     logger.info("Starting panel server")
     dlist = []
-    for p in path:
+
+    def _load_coverage(p):
         logger.info("Loading coverage for %s", p)
         key = cache.cache_key(p, max_bins)
 
@@ -118,10 +119,14 @@ def _serve(path, max_bins, servable=False, **kw):
 
         # TODO: make sure regions are identical for all datasets
         data, regions = cache.cache[key]
-        dlist.append(data)
+        return data, regions
+
+    data, regions = _load_coverage(path)
+    dlist.append(data)
     data = pd.concat(dlist)
+
     ds = datastore.DataStore(
-        data=data, filters=["feature", "x", "path"], regions=regions
+        data=data, filters=["feature", "x"], regions=regions
     )
     app_ = app.App(
         datastore=ds,
@@ -133,7 +138,7 @@ def _serve(path, max_bins, servable=False, **kw):
             "boxplot": BoxPlot,
             "violinplot": ViolinPlot,
         },
-        title="Exploratory data analysis of d4 files",
+        title=path,
     )
     if servable:
         return app_.view().servable()
@@ -164,7 +169,7 @@ def serve(path, port, show, threads, max_bins, servable):
 
 
 @cli.command()
-@path_argument()
+@path_argument(nargs=-1)
 @annotation_file_option()
 @threads_option()
 @max_bins_option()
