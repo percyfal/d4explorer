@@ -80,6 +80,8 @@ httpcore==1.0.6
     # via httpx
 httpx==0.27.2
     # via jupyterlab
+humanize==4.11.0
+    # via d4explorer
 hvplot==0.11.0
     # via d4explorer
 idna==3.10

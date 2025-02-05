@@ -7,11 +7,25 @@ import pandas as pd
 import random
 from panel.viewable import Viewer
 from bokeh.models import CustomJSHover
+from holoviews.plotting.util import process_cmap
 
-from .datastore import DataStore
+from .datastore import DataStore, order_features
 
 hv.extension("bokeh")
 pn.extension("tabulator")
+
+
+CMAP_GLASBEY = {
+    cm.name: cm
+    for cm in hv.plotting.util.list_cmaps(
+        records=True, category="Categorical", reverse=False
+    )
+    if cm.name.startswith("glasbey")
+}
+colormap = "glasbey_hv"
+COLORS = process_cmap(
+    CMAP_GLASBEY[colormap].name, provider=CMAP_GLASBEY[colormap].provider
+)
 
 
 def make_vector(df, sample_size):
@@ -38,7 +52,7 @@ class Histogram(View):
     min_height = param.Integer(default=400)
     min_width = param.Integer(default=600)
 
-    @param.depends("unit")
+    @pn.depends("unit")
     def __panel__(self):
         bases_formatter = CustomJSHover(
             code=f"""
@@ -59,8 +73,6 @@ class Histogram(View):
             min_height=self.min_height,
             min_width=self.min_width,
             title="Coverage Histogram",
-            xticks=None,
-            xaxis=None,
             xlabel="coverage",
             hover_cols=["nbases", "coverage"],
             hover_tooltips=[
@@ -76,11 +88,31 @@ class Histogram(View):
             },
             responsive=True,
             rot=45,
-            legend=None,
+            legend=False,
+            color=COLORS,
         )
         return pn.Column(
             pn.pane.Markdown("## Coverage histogram"), pn.FlexBox(p)
         )
+
+
+def make_group_data(df, samplesize):
+    data = {}
+    for group, group_data in df.groupby(["feature", "path"]):
+        sample = make_vector(group_data, samplesize)
+        data[group.rx.value] = sample
+    data_df = pd.DataFrame(data).stack(future_stack=True)
+    columns = data_df.columns.tolist()
+    data = data_df.reset_index(names=["index", "path"]).melt(
+        value_vars=columns, var_name="feature", id_vars="path"
+    )
+    data["feature"] = data["feature"].astype("category")
+    data["feature"] = data["feature"].cat.set_categories(
+        order_features(data["feature"].cat.categories.values), ordered=True
+    )
+    data["path"] = data["path"].astype("category")
+    data = data.sort_values(["feature", "path"])
+    return data
 
 
 class BoxPlot(View):
@@ -92,26 +124,21 @@ class BoxPlot(View):
         ),
     )
 
-    @param.depends("samplesize")
+    @pn.depends("samplesize")
     def __panel__(self):
         df = self.datastore.filtered
-        data = {}
-        for group, group_data in df.groupby("feature"):
-            sample = make_vector(group_data, self.samplesize)
-            data[group.rx.value] = sample
-        data_df = pd.DataFrame(data)
-        columns = data_df.columns.tolist()
-        data = data_df.melt(value_vars=columns, var_name="feature")
+        data = make_group_data(df, self.samplesize)
         p = data.hvplot.box(
             y="value",
-            by="feature",
+            by=["path", "feature"],
             min_height=self.min_height,
             title="Subsampled coverage distribution",
             min_width=self.min_width,
             responsive=True,
             rot=45,
             color="feature",
-        ).opts(legend_position="right")
+            legend=False,
+        )
         return pn.FlexBox(self.param.samplesize, p)
 
 
@@ -124,26 +151,22 @@ class ViolinPlot(View):
         ),
     )
 
-    @param.depends("samplesize")
+    @pn.depends("samplesize")
     def __panel__(self):
         df = self.datastore.filtered
-        data = {}
-        for group, group_data in df.groupby("feature"):
-            sample = make_vector(group_data, self.samplesize)
-            data[group.rx.value] = sample
-        data_df = pd.DataFrame(data)
-        columns = data_df.columns.tolist()
-        data = data_df.melt(value_vars=columns, var_name="feature")
+        data = make_group_data(df, self.samplesize)
+
         p = data.hvplot.violin(
             y="value",
-            by="feature",
+            by=["path", "feature"],
             min_height=self.min_height,
             min_width=self.min_width,
             title="Subsampled coverage distribution",
             responsive=True,
             rot=45,
             color="feature",
-        ).opts(legend_position="right")
+            legend=False,
+        )
         return pn.FlexBox(self.param.samplesize, p)
 
 
