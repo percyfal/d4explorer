@@ -67,7 +67,7 @@ def path_argument(
     exists: bool = True, dir_okay: bool = False, nargs: int = 1
 ) -> Callable[[FC], FC]:
     return click.argument(
-        "path", type=click.Path(exists=exists, dir_okay=dir_okay), nargs=1
+        "path", type=click.Path(exists=exists, dir_okay=dir_okay), nargs=nargs
     )
 
 
