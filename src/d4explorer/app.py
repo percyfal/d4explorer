@@ -46,7 +46,11 @@ class App(Viewer):
         ]
         _views = [self.views[k](datastore=self.datastore) for k in order]
         self._views = pn.FlexBox(*(v for v in _views), loading=updating)
+        self._views_d = {k: v for k, v in zip(order, self._views)}
         self.unit = _views[1].param.unit
+
+    def load(self):
+        return self.view()
 
     @property
     def version(self):
@@ -66,11 +70,13 @@ class App(Viewer):
             main=pn.Column(
                 *[
                     pn.Column(
-                        self._views[0],
-                        pn.Row(*[self._views[1], self._views[2]]),
+                        self._views_d["indicators"],
                         pn.Row(
-                            *[self._views[3], self._views[4], self._views[5]]
-                        ),
+                            *[self._views_d["histogram"]]
+                        ),  # , self._views[2]]),
+                        # pn.Row(
+                        #     *[self._views[3], self._views[4], self._views[5]]
+                        # ),
                     ),
                 ]
             ),

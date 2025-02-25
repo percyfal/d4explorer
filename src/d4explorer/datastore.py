@@ -14,6 +14,8 @@ from panel.viewable import Viewer
 from pyd4 import D4File
 from tqdm import tqdm
 
+from d4explorer import cache
+
 logger = daiquiri.getLogger("d4explorer")
 
 CARD_STYLE = """
@@ -236,11 +238,15 @@ class Feature:
 
 
 class DataStore(Viewer):
+    keys = cache.get_keys()
+
     data = param.DataFrame()
 
     filters = param.List(constant=True)
 
     regions = param.Dict(constant=True)
+
+    dataset = param.Selector(objects=keys)
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -284,16 +290,32 @@ class DataStore(Viewer):
         self.count = dfx.rx.len()
         self.feature_data = datax
         self._widgets = widgets
+        # self.shape = pn.bind(self.dataset, self.load_coverage)
+
+    @param.depends("dataset")
+    def load_coverage(self, key):
+        print("loading data from key ", key)
+        logger.info("loading data from key ", key)
+        data, regions = cache.cache[key]
+        return data.shape
 
     @property
     def paths(self):
         return self._paths
 
     def __panel__(self):
+        params = pn.Column(
+            "## Parameters",
+            pn.Param(
+                self.param,
+                parameters=["dataset"],
+                widgets={"dataset": pn.widgets.Select},
+            ),
+        )
         filters = pn.Column(
             "## Filters",
             *self._widgets,
             stylesheets=[CARD_STYLE.format(padding="5px 10px")],
             margin=10,
         )
-        return pn.Column(filters)
+        return pn.Column(params, filters)
