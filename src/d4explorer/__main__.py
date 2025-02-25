@@ -13,6 +13,7 @@ from . import app  # noqa
 from . import __version__  # noqa
 from d4explorer import datastore  # noqa
 from d4explorer import cache  # noqa
+from d4explorer import scratch  # noqa
 from .views import (  # noqa
     Histogram,
     BoxPlot,
@@ -127,7 +128,10 @@ def _serve(path, max_bins, servable=False, **kw):
     data = pd.concat(dlist)
 
     ds = datastore.DataStore(
-        data=data, filters=["feature", "x"], regions=regions
+        data=data,
+        filters=["feature", "x"],
+        regions=regions,
+        dataset=[k for k in cache.cache.iterkeys()][0],
     )
     app_ = app.App(
         datastore=ds,
@@ -191,6 +195,22 @@ def preprocess(path, annotation_file, threads, max_bins):
             p, annotation=annotation_file, max_bins=max_bins, threads=threads
         )
         cache.cache[key] = data, regions
+
+
+@cli.command()
+@port_option()
+@show_option()
+@threads_option()
+@log_filter_option()
+@log_level()
+@click.option(
+    "--servable", is_flag=True, default=False, help="Make app servable"
+)
+def sandbox(port, show, threads, servable):
+    """Sandbox version of the app"""
+    scratch.sandbox(
+        port=port, show=show, threads=threads, servable=servable, verbose=False
+    )
 
 
 if __name__ == "__main__":

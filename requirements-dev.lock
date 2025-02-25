@@ -214,11 +214,12 @@ pandas==2.2.3
     # via panel
 pandocfilters==1.5.1
     # via nbconvert
-panel==1.6.0
+panel==1.6.1
     # via d4explorer
     # via holoviews
     # via hvplot
-param==2.1.1
+param==2.2.0
+    # via d4explorer
     # via holoviews
     # via hvplot
     # via panel

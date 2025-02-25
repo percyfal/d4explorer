@@ -15,6 +15,7 @@ information.
 
 from d4explorer import app  # noqa
 from d4explorer import datastore  # noqa
+from d4explorer import scratch  # noqa
 import daiquiri
 import sys
 from collections import deque
@@ -35,6 +36,9 @@ if argfun == "serve":
     fun = serve
 elif argfun == "preprocess":
     fun = preprocess
+elif argfun == "sandbox":
+    arglist.append("--servable")
+    fun = scratch.sandbox
 else:
     fun = serve
     arglist.append("--help")

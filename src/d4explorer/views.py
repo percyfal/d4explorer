@@ -34,11 +34,27 @@ COLORS = process_cmap(
 def make_vector(df, sample_size):
     """Make vector from dataframe."""
     n = np.sum(df["counts"])
-    return np.random.choice(
-        df["x"].rx.value,
-        size=min(int(sample_size), n.rx.value),
-        p=df["counts"].rx.value / n.rx.value,
-    )
+    if int(sample_size) > n.rx.value:
+        feat = df["feature"].rx.value.unique()
+        logger.warning(
+            (
+                "Sample size (n=%i) is larger than the data (n=%i); "
+                "resampling values for feature %s"
+            ),
+            int(sample_size),
+            n.rx.value,
+            ",".join(feat),
+        )
+    try:
+        y = np.random.choice(
+            df["x"].rx.value,
+            size=int(sample_size),
+            p=df["counts"].rx.value / n.rx.value,
+        )
+    except ValueError:
+        logger.warning("Issue sampling data")
+        y = np.zeros(int(sample_size))
+    return y
 
 
 class View(Viewer):
@@ -59,13 +75,14 @@ class Histogram(View):
     def __panel__(self):
         bases_formatter = CustomJSHover(
             code=f"""
-        return (value / {self.factors[self.unit]}).toFixed(2) + ' {self.unit}';
-        """
+            const num = (value/{self.factors[self.unit]}).toFixed(2);
+            return num + ' {self.unit}';
+            """
         )
         coverage_formatter = CustomJSHover(
             code="""
-        return value.toFixed(2) + 'X';
-        """
+            return value.toFixed(2) + 'X';
+            """
         )
         df = self.datastore.filtered
         p = df.hvplot.bar(
