@@ -10,6 +10,7 @@ from bokeh.models import CustomJSHover
 from holoviews.plotting.util import process_cmap
 
 from .datastore import DataStore, order_features
+from .cache import CacheData
 
 
 hv.extension("bokeh")
@@ -55,6 +56,70 @@ def make_vector(df, sample_size):
         logger.warning("Issue sampling data")
         y = np.zeros(int(sample_size))
     return y
+
+
+class CacheDataView(Viewer):
+    data = param.ClassSelector(class_=CacheData)
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        try:
+            self.dfx = self.params.data.rx()
+        except AttributeError:
+            print("no such attribute rx")
+
+    @property
+    def shape(self):
+        """Return shape of coverage data"""
+        return self.data.data.shape
+
+
+class CDHistogram(CacheDataView):
+    def __panel__(self):
+        return pn.Column("### Tried panel")
+        # if self.dfx is None:
+        #     return pn.Column("No data loaded")
+        # bases_formatter = CustomJSHover(
+        #     code="""
+        #     const num = (value/1e6).toFixed(2);
+        #     return num + ' Mbp';
+        #     """
+        # )
+        # coverage_formatter = CustomJSHover(
+        #     code="""
+        #     return value.toFixed(2) + 'X';
+        #     """
+        # )
+        # df = self.dfx.rx.value.data
+        # p = df.hvplot.bar(
+        #     x="x",
+        #     y="counts",
+        #     by="feature",
+        #     fill_alpha=0.5,
+        #     min_height=self.min_height,
+        #     min_width=self.min_width,
+        #     title="Coverage Histogram",
+        #     xlabel="coverage",
+        #     hover_cols=["nbases", "coverage"],
+        #     hover_tooltips=[
+        #         ("Feature", "@feature"),
+        #         ("NBases", "@nbases{custom}"),
+        #         ("Coverage", "@coverage{custom}"),
+        #         ("Counts", "@counts"),
+        #         ("X", "@x"),
+        #     ],
+        #     hover_formatters={
+        #         "@{nbases}": bases_formatter,
+        #         "@{coverage}": coverage_formatter,
+        #     },
+        #     responsive=True,
+        #     rot=45,
+        #     legend=False,
+        #     color=COLORS,
+        # )
+        # return pn.Column(
+        #     pn.pane.Markdown("## Coverage histogram"), pn.FlexBox(p)
+        # )
 
 
 class View(Viewer):

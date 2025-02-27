@@ -8,6 +8,7 @@ from click.decorators import FC
 daiquiri.setup(level="WARN")  # noqa
 import panel as pn  # noqa
 import pandas as pd  # noqa
+from pathlib import Path  # noqa
 
 from . import app  # noqa
 from . import __version__  # noqa
@@ -64,6 +65,15 @@ def log_level(expose_value: bool = False) -> Callable[[FC], FC]:
     )
 
 
+def cachedir_option() -> Callable[[FC], FC]:
+    return click.option(
+        "--cachedir",
+        default=cache.CACHEDIR,
+        expose_value=True,
+        help="Set the cache dir",
+    )
+
+
 def path_argument(
     exists: bool = True, dir_okay: bool = False, nargs: int = 1
 ) -> Callable[[FC], FC]:
@@ -106,13 +116,14 @@ def show_option(default: bool = True) -> Callable[[FC], FC]:
     )
 
 
+# Obsolete
 def _serve(path, max_bins, servable=False, **kw):
     logger.info("Starting panel server")
     dlist = []
 
     def _load_coverage(p):
         logger.info("Loading coverage for %s", p)
-        key = cache.cache_key(p, max_bins)
+        key = cache.CacheData.cache_key(p, max_bins)
 
         if key not in cache.cache:
             logger.error("cache key not found")
@@ -167,10 +178,17 @@ def cli():
 @click.option(
     "--servable", is_flag=True, default=False, help="Make app servable"
 )
-def serve(path, port, show, threads, max_bins, servable):
+@cachedir_option()
+def oldserve(path, port, show, threads, max_bins, servable, cachedir):
     """Serve the app"""
     _ = _serve(
-        path, max_bins, servable=servable, port=port, show=show, verbose=False
+        path,
+        max_bins,
+        servable=servable,
+        port=port,
+        show=show,
+        verbose=False,
+        cachedir=cachedir,
     )
 
 
@@ -181,20 +199,22 @@ def serve(path, port, show, threads, max_bins, servable):
 @max_bins_option()
 @log_filter_option()
 @log_level()
-def preprocess(path, annotation_file, threads, max_bins):
+@cachedir_option()
+def preprocess(path, annotation_file, threads, max_bins, cachedir):
     """Preprocess data for the app"""
+    d4cache = cache.D4ExplorerCache(cachedir)
     for p in path:
         logger.info("Preprocessing %s", p)
-        key = cache.cache_key(p, max_bins)
+        key = cache.CacheData.cache_key(Path(p), max_bins)
 
-        if key in cache.cache:
+        if d4cache.has_key(key):
             logger.info("Preprocessing is cached")
             continue
 
-        data, regions = datastore.preprocess(
+        data = datastore.preprocess(
             p, annotation=annotation_file, max_bins=max_bins, threads=threads
         )
-        cache.cache[key] = data, regions
+        d4cache.add(data)
 
 
 @cli.command()
@@ -203,13 +223,19 @@ def preprocess(path, annotation_file, threads, max_bins):
 @threads_option()
 @log_filter_option()
 @log_level()
+@cachedir_option()
 @click.option(
     "--servable", is_flag=True, default=False, help="Make app servable"
 )
-def sandbox(port, show, threads, servable):
-    """Sandbox version of the app"""
-    scratch.sandbox(
-        port=port, show=show, threads=threads, servable=servable, verbose=False
+def serve(port, show, threads, servable, cachedir):
+    """Serve the app."""
+    app.serve(
+        port=port,
+        show=show,
+        threads=threads,
+        servable=servable,
+        cachedir=cachedir,
+        verbose=False,
     )
 
 

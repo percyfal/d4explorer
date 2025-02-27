@@ -2,6 +2,7 @@ import concurrent.futures
 import os
 import subprocess as sp
 from dataclasses import dataclass
+from pathlib import Path
 from tempfile import mkdtemp
 from threading import BoundedSemaphore
 
@@ -14,7 +15,7 @@ from panel.viewable import Viewer
 from pyd4 import D4File
 from tqdm import tqdm
 
-from d4explorer import cache
+from d4explorer import cache, config
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -147,9 +148,9 @@ def make_vector(df, sample_size):
     return data
 
 
-def make_regions(path, annotation=None):
+def make_regions(path: Path, annotation: Path = None):
     columns = ["seqid", "start", "end"]
-    d4 = D4File(path)
+    d4 = D4File(str(path))
 
     genome = Feature(
         "genome",
@@ -169,10 +170,16 @@ def make_regions(path, annotation=None):
     return d4, retval
 
 
-def preprocess(path, *, annotation=None, max_bins=1_000, threads=1):
+def preprocess(
+    path: Path,
+    *,
+    annotation: Path = None,
+    max_bins: int = 1_000,
+    threads: int = 1,
+) -> cache.CacheData:
     d4, regions = make_regions(path, annotation)
     dflist = []
-    genome_size = np.sum(x[1] for x in d4.chroms())
+    genome_size = sum(x[1] for x in d4.chroms())
     futures = []
     pool = MaxQueuePool(
         concurrent.futures.ProcessPoolExecutor,
@@ -206,7 +213,8 @@ def preprocess(path, *, annotation=None, max_bins=1_000, threads=1):
 
     df = pd.concat(dflist)
     logger.info("Computed summary dataframe")
-    return df, regions
+    data = cache.CacheData(Path(path), df, regions, max_bins=max_bins)
+    return data
 
 
 @dataclass
@@ -238,6 +246,83 @@ class Feature:
 
 
 class DataStore(Viewer):
+    """Class representing the main data store.
+
+    Load data from cache and respond to filters to create views of the
+    data.
+    """
+
+    dataset = pn.widgets.Select(name="Dataset")
+
+    load_data_button = pn.widgets.Button(
+        name="Load Data",
+        button_type="success",
+        margin=(10, 10),
+        description="Load data from selected dataset.",
+    )
+
+    cachedir = param.Path(
+        default=cache.CACHEDIR,
+        doc="Path to cache directory",
+        allow_None=True,
+    )
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self.cache = cache.D4ExplorerCache(self.cachedir)
+        self.data = None
+        self.dataset.options = self.cache.keys
+        self.dataset.value = None
+
+    def _setup_data(self):
+        pass
+
+    @pn.depends("dataset")
+    def load_data(self):
+        if self.dataset.value is None:
+            return
+        logger.info("Loading data for dataset %s", self.dataset.value)
+        self.data = self.cache.get(self.dataset.value)
+        # self.data = CacheDataView(data=data)
+
+    def add_data(self, data: cache.CacheData):
+        """Add data to the cache."""
+        self.cache.add(data)
+
+    @pn.depends("dataset")
+    def shape(self):
+        if self.data is None:
+            return pn.Column("### Shape", "No data loaded")
+        return pn.Column(
+            "### Shape", self.data.data.data.shape, self.dataset.value
+        )
+
+    @pn.depends("dataset", "load_data_button.value")
+    def __panel__(self):
+        self.load_data()
+        # if self.data is not None:
+        #     cdhist = CDHistogram(data=self.data)
+        # else:
+        #     print("No data loaded")
+        #     cdhist = pn.Column("Nope data loaded")
+        # return pn.Column(self.shape, cdhist)
+        return pn.Column(self.shape)
+
+    def sidebar(self) -> pn.Card:
+        return pn.Column(
+            pn.Card(
+                self.dataset,
+                self.load_data_button,
+                collapsed=False,
+                title="Dataset options",
+                header_background=config.SIDEBAR_BACKGROUND,
+                active_header_background=config.SIDEBAR_BACKGROUND,
+                styles=config.VCARD_STYLE,
+            ),
+        )
+
+
+class OldDataStore(Viewer):
     keys = cache.get_keys()
 
     data = param.DataFrame()
@@ -294,7 +379,6 @@ class DataStore(Viewer):
 
     @param.depends("dataset")
     def load_coverage(self, key):
-        print("loading data from key ", key)
         logger.info("loading data from key ", key)
         data, regions = cache.cache[key]
         return data.shape
