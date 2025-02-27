@@ -4,7 +4,7 @@ import param
 from panel.viewable import Viewer
 
 from d4explorer import config
-from d4explorer.cache import D4ExplorerCache
+from d4explorer.cache import CACHEDIR, CacheData, D4ExplorerCache
 
 daiquiri.setup(level="WARN")  # noqa
 
@@ -14,6 +14,11 @@ pn.extension(sizing_mode="stretch_width")
 
 
 class DataStore(Viewer):
+    """Class representing the main data store.
+
+    Load data from cache and respond to filters to create views of th e data.
+    """
+
     dataset = pn.widgets.Select(name="Dataset")
 
     load_data_button = pn.widgets.Button(
@@ -23,30 +28,51 @@ class DataStore(Viewer):
         description="Load data from selected dataset.",
     )
 
+    cachedir = param.Path(
+        default=CACHEDIR,
+        doc="Path to cache directory",
+        allow_None=True,
+    )
+
     def __init__(self, **params):
         super().__init__(**params)
-        self.cache = D4ExplorerCache()
+        self.cache = D4ExplorerCache(self.cachedir)
         self.data = None
-        self.regions = None
         self.dataset.options = self.cache.keys
         self.dataset.value = None
+
+    #    def _setup_data(self):
 
     @pn.depends("dataset")
     def load_data(self):
         if self.dataset.value is None:
             return
         logger.info("Loading data for dataset %s", self.dataset.value)
-        self.data, self.regions = self.cache.get(self.dataset.value)
+        self.data = self.cache.get(self.dataset.value)
+        # self.data = CacheDataView(data=data)
 
-    @pn.depends("dataset", watch=True)
+    def add_data(self, data: CacheData):
+        """Add data to the cache."""
+        self.cache.add(data)
+
+    @pn.depends("dataset")
     def shape(self):
         if self.data is None:
             return pn.Column("### Shape", "No data loaded")
-        return pn.Column("### Shape", self.data.shape, self.dataset.value)
+        print(self.data)
+        return pn.Column(
+            "### Shape", self.data.data.data.shape, self.dataset.value
+        )
 
-    @pn.depends("dataset", "load_data_button.value", watch=True)
+    @pn.depends("dataset", "load_data_button.value")
     def __panel__(self):
         self.load_data()
+        # if self.data is not None:
+        #     cdhist = CDHistogram(data=self.data)
+        # else:
+        #     print("No data loaded")
+        #     cdhist = pn.Column("Nope data loaded")
+        # return pn.Column(self.shape, cdhist)
         return pn.Column(self.shape)
 
     def sidebar(self) -> pn.Card:
@@ -59,7 +85,7 @@ class DataStore(Viewer):
                 header_background=config.SIDEBAR_BACKGROUND,
                 active_header_background=config.SIDEBAR_BACKGROUND,
                 styles=config.VCARD_STYLE,
-            )
+            ),
         )
 
 
@@ -82,7 +108,10 @@ def sandbox(servable, **kw):
     """Sandbox version of the app"""
     logger.info("Running scratch sandbox")
 
-    ds = DataStore()
+    kwargs = {}
+    if "cachedir" in kw:
+        kwargs["cachedir"] = kw.pop("cachedir")
+    ds = DataStore(**kwargs)
     app_ = App(datastore=ds)
 
     if servable:
