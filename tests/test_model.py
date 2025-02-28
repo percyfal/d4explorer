@@ -5,7 +5,7 @@ import pytest
 from panel.viewable import Viewer
 from param.reactive import rx
 
-from d4explorer.model import D4Hist, GFF3Annotation
+from d4explorer.model import D4AnnotatedHist, D4Hist, Feature, GFF3Annotation
 
 
 @pytest.fixture
@@ -15,6 +15,20 @@ def hist():
             "x": ["<0", "0", "1", "2", "3", ">3"],
             "counts": [0, 1, 2, 1, 0, 0],
         }
+    )
+
+
+@pytest.fixture
+def gene_hist():
+    return pd.DataFrame(
+        {"x": ["<0", "0", "1", "2", "3", ">3"], "counts": [0, 1, 2, 1, 0, 0]}
+    )
+
+
+@pytest.fixture
+def exon_hist():
+    return pd.DataFrame(
+        {"x": ["<0", "0", "1", "2", "3", ">3"], "counts": [0, 2, 3, 1, 0, 0]}
     )
 
 
@@ -43,15 +57,35 @@ def gff_df():
     )
 
 
+@pytest.fixture
+def genome():
+    return pd.DataFrame(
+        {"seqid": ["chr1", "chr2"], "start": [0, 0], "end": [110, 120]}
+    )
+
+
+def test_annotation_path(gff):
+    GFF3Annotation(gff)
+
+
 def test_annotation(gff_df):
     gff = GFF3Annotation(gff_df)
+    np.testing.assert_array_equal(gff.feature_types, ["gene", "rRNA", "exon"])
     assert gff.shape == (4, 9)
     gff = gff["gene"]
     assert gff.shape == (2, 9)
 
 
-def test_d4hist(hist):
-    d4hist = D4Hist(hist)
+def test_annotation_features(gff_df):
+    gff = GFF3Annotation(gff_df)
+    exons = gff["exon"]
+    exons_ft = Feature(exons)
+    assert len(exons_ft) == 40
+    assert len(Feature(gff["gene"])) == 130
+
+
+def test_d4hist(hist, genome):
+    d4hist = D4Hist(hist, feature=Feature(genome, "genome"))
     assert d4hist.data.shape == (6, 2)
     assert d4hist.data["x"].dtype == np.int64
     assert d4hist.max_bin == 3
@@ -67,9 +101,9 @@ def test_d4hist(hist):
     np.testing.assert_array_equal(sample, [1, 2, 1, 1, 0])
 
 
-def test_d4hist_trimmed(hist):
+def test_d4hist_trimmed(hist, genome):
     data = hist[(hist["x"] != "<0") & (hist["x"] != ">3")]
-    d4hist = D4Hist(data)
+    d4hist = D4Hist(data, feature=Feature(genome, "genome"))
     assert d4hist.data.shape == (4, 2)
     assert d4hist.data["x"].dtype == np.int64
     assert d4hist.max_bin == 2
@@ -77,17 +111,101 @@ def test_d4hist_trimmed(hist):
     np.testing.assert_array_equal(d4hist.nbases.values, [0, 2, 2, 0])
 
 
-class Parameters(Viewer):
+class IParam(Viewer):
     integer = param.Integer(default=1)
 
 
-def test_rx_d4hist(hist):
-    d4hist = D4Hist(hist)
+def test_rx_d4hist(hist, genome):
+    d4hist = D4Hist(hist, feature=Feature(genome, "genome"))
     dfi = rx(d4hist)
-    pmin = Parameters(integer=0)
-    pmax = Parameters(integer=10)
+    pmin = IParam(integer=0)
+    pmax = IParam(integer=10)
     condition = dfi.data["x"].between(pmin.param.integer, pmax.param.integer)
     dfi = dfi[condition]
     assert dfi.rx.value.data.shape == (5, 2)
-    pmax.integer = 2
+    sample1 = dfi.rx.value.sample(n=20, random_seed=42)
+    pmin.integer = 1
+    pmax.integer = 3
     assert dfi.rx.value.data.shape == (3, 2)
+    sample2 = dfi.rx.value.sample(n=20, random_seed=42)
+    with pytest.raises(AssertionError):
+        np.testing.assert_array_equal(sample1, sample2)
+
+
+def test_d4hist_w_annotation(hist, gene_hist, exon_hist, gff_df, genome):
+    gff = GFF3Annotation(gff_df)
+    genome = Feature(genome, "genome")
+    d4hist = D4Hist(hist, feature=genome, genome_size=len(genome))
+    exon_hist = D4Hist(
+        exon_hist, feature=Feature(gff["exon"]), genome_size=len(genome)
+    )
+    gene_hist = D4Hist(
+        gene_hist, feature=Feature(gff["gene"]), genome_size=len(genome)
+    )
+    assert d4hist.feature_type == "genome"
+    assert d4hist.feature.name == "genome"
+    assert exon_hist.feature_type == "exon"
+    assert exon_hist.feature.name == "exon"
+    assert gene_hist.feature_type == "gene"
+    assert gene_hist.feature.name == "gene"
+    assert d4hist.data.shape == (6, 2)
+    assert exon_hist.data.shape == (6, 2)
+    assert gene_hist.data.shape == (6, 2)
+    assert d4hist.max_bin == 3
+    assert exon_hist.max_bin == 3
+    assert gene_hist.max_bin == 3
+
+
+def test_d4annotatedhist(hist, exon_hist, gff_df, genome):
+    gff = GFF3Annotation(gff_df)
+    genome = Feature(genome, "genome")
+    d4hist = D4Hist(hist, feature=genome, genome_size=len(genome))
+    d4exon_hist = D4Hist(
+        exon_hist, feature=Feature(gff["exon"]), genome_size=len(genome)
+    )
+    D4AnnotatedHist(
+        data=[d4hist, d4exon_hist], annotation=gff, genome_size=len(genome)
+    )
+    with pytest.raises(AssertionError):
+        D4AnnotatedHist(
+            data=[hist, exon_hist], annotation=hist, genome_size="100"
+        )
+
+
+class LParam(Viewer):
+    ls = param.List(["genome"], item_type=str)
+
+
+def test_rx_d4annotatedhist(hist, exon_hist, gff_df, genome):
+    gff = GFF3Annotation(gff_df)
+    genome = Feature(genome, "genome")
+    d4hist = D4Hist(hist, feature=genome, genome_size=len(genome))
+    d4exon_hist = D4Hist(
+        exon_hist, feature=Feature(gff["exon"]), genome_size=len(genome)
+    )
+    ds = D4AnnotatedHist(
+        data=[d4hist, d4exon_hist], annotation=gff, genome_size=len(genome)
+    )
+    dfi = rx(ds)
+    assert len(dfi.rx.value.data) == 2
+    assert dfi.rx.value.data[0].feature_type == "genome"
+    assert dfi.rx.value.data[1].feature_type == "exon"
+    for x in dfi.rx.value.data:
+        assert x.shape == (6, 2)
+    pmin = IParam(integer=0)
+    pmax = IParam(integer=2)
+    irange = dfi.between(pmin.param.integer, pmax.param.integer)
+    dfi = dfi[irange]
+    for x in dfi.rx.value.data:
+        assert x.shape == (3, 2)
+    assert dfi.rx.value.data[0].shape == (3, 2)
+    assert dfi.rx.value.data[0].feature_type == "genome"
+    assert dfi.rx.value.data[1].feature_type == "exon"
+    features = LParam(ls=["exon"])
+    dfi = dfi[features.param.ls]
+    assert len(dfi.rx.value.data) == 1
+    assert dfi.rx.value.data[0].feature_type == "exon"
+    features = LParam(ls=["foo"])
+    dfi = dfi[features.param.ls]
+    with pytest.raises(AssertionError):
+        len(dfi.rx.value.data)

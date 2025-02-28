@@ -4,7 +4,7 @@ import param
 from panel.viewable import Viewer
 
 from d4explorer import config
-from d4explorer.cache import CACHEDIR, CacheData, D4ExplorerCache
+from d4explorer.cache import CACHEDIR, D4ExplorerCache
 
 daiquiri.setup(level="WARN")  # noqa
 
@@ -49,9 +49,8 @@ class DataStore(Viewer):
             return
         logger.info("Loading data for dataset %s", self.dataset.value)
         self.data = self.cache.get(self.dataset.value)
-        # self.data = CacheDataView(data=data)
 
-    def add_data(self, data: CacheData):
+    def add_data(self, data):
         """Add data to the cache."""
         self.cache.add(data)
 
