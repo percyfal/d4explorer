@@ -1,8 +1,10 @@
 """d4explorer data module."""
 
 import dataclasses
+import os
 from enum import Enum
 from pathlib import Path
+from tempfile import mkdtemp
 
 import daiquiri
 import numpy as np
@@ -20,47 +22,109 @@ class DataTypes(Enum):
     D4 = "d4"
 
 
+GFF3_COLUMNS = [
+    "seqid",
+    "source",
+    "type",
+    "start",
+    "end",
+    "score",
+    "strand",
+    "phase",
+    "attributes",
+]
+
+
+def convert_to_si_suffix(number):
+    """Convert a number to a string with an SI suffix."""
+    suffixes = [" ", "kbp", "Mbp", "Gbp", "Tbp"]
+    power = len(str(int(number))) // 3
+    return f"{number / 1000 ** power:.1f} {suffixes[power]}"
+
+
 @dataclasses.dataclass
 class GFF3Annotation:
     """GFF3 annotation dataclass."""
 
-    data: pd.DataFrame
+    data: pd.DataFrame | Path
+    feature_type: str = "genome"
 
     def __post_init__(self):
+        if isinstance(self.data, Path):
+            self._read()
         assert self.data.shape[1] == 9, (
             "Data must have nine columns; saw shape %s" % str(self.data.shape)
         )
-        self.data.columns = [
-            "seqid",
-            "source",
-            "type",
-            "start",
-            "end",
-            "score",
-            "strand",
-            "phase",
-            "attributes",
-        ]
+        self.data.columns = GFF3_COLUMNS
+
+    def _read(self):
+        self.data = pd.read_table(
+            self.data, comment="#", header=None, sep="\t"
+        )
 
     def __getitem__(self, key):
         """Return annotation for specific feature type"""
-        return GFF3Annotation(self.data[self.data["type"] == key])
+        return GFF3Annotation(
+            self.data[self.data["type"] == key], feature_type=key
+        )
 
     @property
     def shape(self):
         return self.data.shape
 
+    @property
+    def feature_types(self):
+        return self.data["type"].unique()
+
+
+@dataclasses.dataclass
+class Feature:
+    data: pd.DataFrame | GFF3Annotation
+    name: str = None
+
+    def __post_init__(self):
+        if isinstance(self.data, GFF3Annotation):
+            if self.name is None:
+                self.name = self.data.feature_type
+            self.data = self.data.data[["seqid", "start", "end"]]
+        else:
+            assert all(self.data.columns.values == ["seqid", "start", "end"])
+        self._total = np.sum(self.data["end"] - self.data["start"])
+        temp_dir = mkdtemp()
+        self._temp_file = os.path.join(temp_dir, "regions.bed")
+        self.write()
+
+    @property
+    def total(self):
+        return self._total
+
+    @property
+    def temp_file(self):
+        return self._temp_file
+
+    def write(self):
+        logger.info("Writing regions to %s", self.temp_file)
+        self.data.to_csv(self.temp_file, sep="\t", index=False)
+
+    def format(self):
+        return convert_to_si_suffix(self.total)
+
+    def __len__(self):
+        return self._total
+
 
 @dataclasses.dataclass
 class D4Hist:
     data: pd.DataFrame
+    feature: Feature
     genome_size: int = None
-    feature_type: str = "genome"
-    annotation: GFF3Annotation = None
 
     def __post_init__(self):
         assert self.data.shape[1] == 2, (
             "Data must have two columns; saw shape %s" % str(self.data.shape)
+        )
+        assert isinstance(self.feature, Feature), (
+            "Feature must be of class Feature; saw %s" % type(self.feature)
         )
         self.data.columns = ["x", "counts"]
         self.ltzero = pd.Series([False] * self.data.shape[0])
@@ -80,9 +144,12 @@ class D4Hist:
         self.data = self.data.astype(int)
 
     def __getitem__(self, key):
-        print("Calling getitem with ", key)
         data = self.data[key]
-        return D4Hist(data)
+        return D4Hist(data, feature=self.feature, genome_size=self.genome_size)
+
+    @property
+    def feature_type(self):
+        return self.feature.name
 
     @property
     def shape(self):
@@ -145,27 +212,40 @@ class D4Hist:
 
 
 @dataclasses.dataclass
-class D4Data:
-    name: Path
-
-
-@dataclasses.dataclass
-class D4HistOld:
-    data: pd.DataFrame
-
-    _columns = ["x", "counts", "nbases", "coverage"]
+class D4AnnotatedHist:
+    data: list[D4Hist] = dataclasses.field(default_factory=list)
+    annotation: GFF3Annotation = None
+    genome_size: int = None
+    path: Path = None
+    max_bins: int = 1_000
 
     def __post_init__(self):
-        assert self.data.shape[1] == 4, (
-            "Data must have four columns; saw shape %s" % str(self.data.shape)
+        assert all(isinstance(x, D4Hist) for x in self.data)
+        assert len(self.data) > 0
+        assert isinstance(self.genome_size, int)
+        if self.annotation is not None:
+            assert isinstance(self.annotation, GFF3Annotation)
+
+    def between(self, pmin, pmax):
+        return self.data[0].data["x"].between(pmin, pmax)
+
+    def __getitem__(self, key):
+        """Allow slicing with boolean Series or list of strings for features"""
+        if isinstance(key, pd.Series):
+            data = [x[key] for x in self.data]
+        elif isinstance(key, list):
+            data = [x for x in self.data if x.feature_type in key]
+        return D4AnnotatedHist(
+            data=data, annotation=self.annotation, genome_size=self.genome_size
         )
-        if not all([x == y for x, y in zip(self.data.columns, self._columns)]):
-            self.data.columns = self._columns
 
-    # def __getitem__(self, key):
-    #     print("CAlling getitem with ", key)
-    #     return self.data[key]
+    @classmethod
+    def cache_key(cls, path: Path, max_bins: int, annotation: Path) -> str:
+        """Generate a cache key for a given path, max_bins and annotation"""
+        size = path.stat().st_size
+        absname = os.path.normpath(str(path.absolute()))
+        return f"d4explorer:{absname}:{size}:{max_bins}:{annotation}"
 
-    def between(self, minval, maxval):
-        condition = self.data["x"].between(minval, maxval)
-        return D4Hist(self.data[condition])
+    @property
+    def key(self):
+        return self.cache_key(self.path, self.max_bins, self.annotation)

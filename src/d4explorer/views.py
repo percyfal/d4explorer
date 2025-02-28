@@ -10,7 +10,6 @@ from bokeh.models import CustomJSHover
 from holoviews.plotting.util import process_cmap
 
 from .datastore import DataStore, order_features
-from .cache import CacheData
 
 
 hv.extension("bokeh")
@@ -59,7 +58,8 @@ def make_vector(df, sample_size):
 
 
 class CacheDataView(Viewer):
-    data = param.ClassSelector(class_=CacheData)
+    # data = param.ClassSelector(class_=CacheData)
+    data = param.ClassSelector(class_=pd.DataFrame)
 
     def __init__(self, **params):
         super().__init__(**params)

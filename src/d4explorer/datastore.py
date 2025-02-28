@@ -1,9 +1,6 @@
 import concurrent.futures
-import os
 import subprocess as sp
-from dataclasses import dataclass
 from pathlib import Path
-from tempfile import mkdtemp
 from threading import BoundedSemaphore
 
 import daiquiri
@@ -16,6 +13,7 @@ from pyd4 import D4File
 from tqdm import tqdm
 
 from d4explorer import cache, config
+from d4explorer.model import D4AnnotatedHist, D4Hist, Feature, GFF3Annotation
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -61,13 +59,6 @@ def order_features(values):
     if len(values) > 0:
         order.extend(values)
     return order
-
-
-def convert_to_si_suffix(number):
-    """Convert a number to a string with an SI suffix."""
-    suffixes = [" ", "kbp", "Mbp", "Gbp", "Tbp"]
-    power = len(str(int(number))) // 3
-    return f"{number / 1000 ** power:.1f} {suffixes[power]}"
 
 
 class MaxQueuePool:
@@ -124,27 +115,13 @@ def d4hist(args):
         )
     except sp.CalledProcessError as e:
         logger.error(e)
-    data = pd.DataFrame(
-        [x.split() for x in res.stdout.decode("utf-8").split("\n") if x],
-        columns=["x", "counts"],
+    data = D4Hist(
+        pd.DataFrame(
+            [x.split() for x in res.stdout.decode("utf-8").split("\n") if x],
+            columns=["x", "counts"],
+        ),
+        feature=regions,
     )
-    data.drop([0, data.shape[0] - 1], inplace=True)
-    data["x"] = data["x"].astype(int)
-    data["counts"] = data["counts"].astype(int)
-    return data, regions
-
-
-def make_vector(df, sample_size):
-    """Make vector from dataframe."""
-    n = np.sum(df["counts"])
-    try:
-        data = np.random.choice(
-            df["x"].rx.value,
-            size=min(int(sample_size), n.rx.value),
-            p=df["counts"].rx.value / n.rx.value,
-        )
-    except ValueError:
-        data = None
     return data
 
 
@@ -153,19 +130,17 @@ def make_regions(path: Path, annotation: Path = None):
     d4 = D4File(str(path))
 
     genome = Feature(
-        "genome",
         pd.DataFrame([(x[0], 0, x[1]) for x in d4.chroms()], columns=columns),
+        name="genome",
     )
     retval = {"genome": genome}
     if annotation is None:
         return d4, retval
     # Assume gff3 for now
     logger.info("Reading annotation")
-    df_annot = pd.read_table(
-        annotation, names=GFF3_COLUMNS, comment="#", header=None, sep="\t"
-    )
-    for ft, reg in df_annot.groupby("type"):
-        retval[ft] = Feature(ft, reg[columns])
+    annot = GFF3Annotation(annotation)
+    for ft in annot.feature_types:
+        retval[ft] = Feature(annot[ft])
     logger.info("Made annotation regions")
     return d4, retval
 
@@ -176,10 +151,8 @@ def preprocess(
     annotation: Path = None,
     max_bins: int = 1_000,
     threads: int = 1,
-) -> cache.CacheData:
+) -> D4AnnotatedHist:
     d4, regions = make_regions(path, annotation)
-    dflist = []
-    genome_size = sum(x[1] for x in d4.chroms())
     futures = []
     pool = MaxQueuePool(
         concurrent.futures.ProcessPoolExecutor,
@@ -196,53 +169,23 @@ def preprocess(
     for args in generator:
         futures.append(pool.submit(d4hist, args))
 
-    dflist = []
+    d4list = []
     for x in tqdm(futures):
-        data, reg = x.result()
-        d = pd.DataFrame(
-            {
-                "path": path,
-                "feature": reg.name,
-                "x": data["x"],
-                "counts": data["counts"],
-            }
-        )
-        d["nbases"] = d["counts"] * d["x"]
-        d["coverage"] = d["nbases"] / genome_size
-        dflist.append(d)
+        data = x.result()
+        data.genome_size = len(regions["genome"])
+        d4list.append(data)
 
-    df = pd.concat(dflist)
     logger.info("Computed summary dataframe")
-    data = cache.CacheData(Path(path), df, regions, max_bins=max_bins)
+    if annotation is not None:
+        annotation = GFF3Annotation(annotation)
+    data = D4AnnotatedHist(
+        path=path,
+        max_bins=max_bins,
+        data=d4list,
+        annotation=annotation,
+        genome_size=len(regions["genome"]),
+    )
     return data
-
-
-@dataclass
-class Feature:
-    name: str
-    data: pd.DataFrame
-
-    def __post_init__(self):
-        assert all(self.data.columns.values == ["seqid", "start", "end"])
-        self._total = np.sum(self.data["end"] - self.data["start"])
-        temp_dir = mkdtemp()
-        self._temp_file = os.path.join(temp_dir, "regions.bed")
-        self.write()
-
-    @property
-    def total(self):
-        return self._total
-
-    @property
-    def temp_file(self):
-        return self._temp_file
-
-    def write(self):
-        logger.info("Writing regions to %s", self.temp_file)
-        self.data.to_csv(self.temp_file, sep="\t", index=False)
-
-    def format(self):
-        return convert_to_si_suffix(self.total)
 
 
 class DataStore(Viewer):
@@ -283,9 +226,9 @@ class DataStore(Viewer):
             return
         logger.info("Loading data for dataset %s", self.dataset.value)
         self.data = self.cache.get(self.dataset.value)
-        # self.data = CacheDataView(data=data)
+        print(type(self.data))
 
-    def add_data(self, data: cache.CacheData):
+    def add_data(self, data):
         """Add data to the cache."""
         self.cache.add(data)
 
@@ -320,86 +263,3 @@ class DataStore(Viewer):
                 styles=config.VCARD_STYLE,
             ),
         )
-
-
-class OldDataStore(Viewer):
-    keys = cache.get_keys()
-
-    data = param.DataFrame()
-
-    filters = param.List(constant=True)
-
-    regions = param.Dict(constant=True)
-
-    dataset = param.Selector(objects=keys)
-
-    def __init__(self, **params):
-        super().__init__(**params)
-        dfx = self.param.data.rx()
-        datax = self.param.data.rx()
-        self._paths = datax.rx.value["path"].unique().tolist()
-        widgets = []
-        for filt in self.filters:
-            dtype = self.data.dtypes[filt]
-            if dtype.kind == "i":
-                widget = pn.widgets.RangeSlider(
-                    name=filt,
-                    start=dfx[filt].min(),
-                    end=dfx[filt].max(),
-                    value=(dfx[filt].min(), dfx[filt].max()),
-                    step=1,
-                )
-                condition = dfx[filt].between(*widget.rx())
-            else:
-                try:
-                    options = dfx[filt].unique().tolist()
-                except AttributeError:
-                    options = dfx[filt].cat.categories.to_list()
-                value = []
-                widget = pn.widgets.MultiChoice(
-                    name=filt, options=options, value=value
-                )
-                condition = dfx[filt].isin(
-                    widget.rx().rx.where(widget, options)
-                )
-                if filt == "feature":
-                    datax = datax[condition]
-                if filt == "path":
-                    i = dfx[filt].isin(
-                        widget.rx().rx.where(widget, [options[0]])
-                    )
-                    datax = datax[i]
-            dfx = dfx[condition]
-            widgets.append(widget)
-        self.filtered = dfx
-        self.count = dfx.rx.len()
-        self.feature_data = datax
-        self._widgets = widgets
-        # self.shape = pn.bind(self.dataset, self.load_coverage)
-
-    @param.depends("dataset")
-    def load_coverage(self, key):
-        logger.info("loading data from key ", key)
-        data, regions = cache.cache[key]
-        return data.shape
-
-    @property
-    def paths(self):
-        return self._paths
-
-    def __panel__(self):
-        params = pn.Column(
-            "## Parameters",
-            pn.Param(
-                self.param,
-                parameters=["dataset"],
-                widgets={"dataset": pn.widgets.Select},
-            ),
-        )
-        filters = pn.Column(
-            "## Filters",
-            *self._widgets,
-            stylesheets=[CARD_STYLE.format(padding="5px 10px")],
-            margin=10,
-        )
-        return pn.Column(params, filters)
