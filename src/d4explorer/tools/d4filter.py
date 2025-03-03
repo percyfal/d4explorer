@@ -52,7 +52,7 @@ def log_level(expose_value=False):
 @log_level()
 def cli(path, min_value, max_value):
     """Command line interface for d4filter. Prints filtered results in
-    BED format to stdout."""
+    BED5 format to stdout."""
     logger.info("Running d4filter")
     d4 = D4File(path)
     dflist = []
@@ -66,6 +66,7 @@ def cli(path, min_value, max_value):
                 "chrom": chrom,
                 "begin": pos,
                 "end": pos + 1,
+                "name": "d4explorer-d4filter",
                 "value": vals[flags],
             }
         )
