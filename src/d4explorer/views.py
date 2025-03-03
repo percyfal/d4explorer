@@ -32,36 +32,6 @@ COLORS = process_cmap(
 )
 
 
-# def make_vector(df, sample_size):
-#     """Make vector from dataframe."""
-#     n = np.sum(df["counts"])
-#     if int(sample_size) > n.rx.value:
-#         feat = df["feature"].rx.value.unique()
-#         logger.warning(
-#             (
-#                 "Sample size (n=%i) is larger than the data (n=%i); "
-#                 "resampling values for feature %s"
-#             ),
-#             int(sample_size),
-#             n.rx.value,
-#             ",".join(feat),
-#         )
-#     try:
-#         y = np.random.choice(
-#             df["x"].rx.value,
-#             size=int(sample_size),
-#             p=df["counts"].rx.value / n.rx.value,
-#         )
-#     except ValueError:
-#         logger.warning("Issue sampling data")
-#         y = np.zeros(int(sample_size))
-#     return y
-
-
-def make_group_data(df, sample_size):
-    pass
-
-
 class View(Viewer):
     data = param.ClassSelector(class_=D4AnnotatedHist)
     fulldata = param.ClassSelector(class_=pd.DataFrame)
@@ -72,8 +42,8 @@ class D4HistogramView(View):
         default="Mbp", doc="Unit of bins", objects=["bp", "Kbp", "Mbp", "Gbp"]
     )
     factors = {"bp": 1, "Kbp": 1e3, "Mbp": 1e6, "Gbp": 1e9}
-    min_height = param.Integer(default=400)
-    min_width = param.Integer(default=600)
+    min_height = param.Integer(default=400, doc="Minimum height of plot")
+    min_width = param.Integer(default=400, doc="Minimum width of plot")
 
     @pn.depends("unit")
     def __panel__(self):
@@ -122,7 +92,17 @@ class D4HistogramView(View):
             color=COLORS,
         )
         return pn.Column(
-            pn.pane.Markdown("# Coverage histogram"), pn.FlexBox(p)
+            pn.pane.Markdown("# Coverage histogram"),
+            pn.FlexBox(
+                pn.Column(
+                    pn.Row(
+                        self.param.unit,
+                        self.param.min_height,
+                        self.param.min_width,
+                    ),
+                    p,
+                )
+            ),
         )
 
 
@@ -134,12 +114,32 @@ class D4BoxPlotView(View):
             "x (coverage) column, weighted by the counts column."
         ),
     )
+    min_height = param.Integer(default=400, doc="Minimum height of plot")
+    min_width = param.Integer(default=400, doc="Minimum width of plot")
 
-    @pn.depends("samplesize")
+    @pn.depends(
+        "samplesize",
+        "min_height",
+        "min_width",
+    )
     def __panel__(self):
-        df = self.datastore.filtered
-        data = make_group_data(df, self.samplesize)
-        by = ["feature"] if len(data.columns) == 2 else ["path", "feature"]
+        df = self.data.df()
+        if len(df) == 0:
+            return pn.Column(
+                pn.pane.Markdown("# Boxplot"),
+                pn.pane.Markdown("No data available"),
+            )
+        dflist = []
+        for ft_data in self.data.data:
+            df = pd.DataFrame(
+                {
+                    "feature": ft_data.feature.name,
+                    "value": ft_data.sample(self.samplesize),
+                }
+            )
+            dflist.append(df)
+        data = pd.concat(dflist)
+        by = ["feature"]
         p = data.hvplot.box(
             y="value",
             by=by,
@@ -152,7 +152,16 @@ class D4BoxPlotView(View):
             cmap=COLORS,
             legend=False,
         )
-        return pn.FlexBox(self.param.samplesize, p)
+        return pn.FlexBox(
+            pn.Column(
+                pn.Row(
+                    self.param.samplesize,
+                    self.param.min_height,
+                    self.param.min_width,
+                ),
+                p,
+            )
+        )
 
 
 class D4ViolinPlotView(View):
@@ -163,13 +172,32 @@ class D4ViolinPlotView(View):
             "x (coverage) column, weighted by the counts column."
         ),
     )
+    min_height = param.Integer(default=400)
+    min_width = param.Integer(default=600)
 
-    @pn.depends("samplesize")
+    @pn.depends(
+        "samplesize",
+        "min_height",
+        "min_width",
+    )
     def __panel__(self):
-        df = self.datastore.filtered
-        data = make_group_data(df, self.samplesize)
-        by = ["feature"] if len(data.columns) == 2 else ["path", "feature"]
-
+        df = self.data.df()
+        if len(df) == 0:
+            return pn.Column(
+                pn.pane.Markdown("# Boxplot"),
+                pn.pane.Markdown("No data available"),
+            )
+        dflist = []
+        for ft_data in self.data.data:
+            df = pd.DataFrame(
+                {
+                    "feature": ft_data.feature.name,
+                    "value": ft_data.sample(self.samplesize),
+                }
+            )
+            dflist.append(df)
+        data = pd.concat(dflist)
+        by = ["feature"]
         p = data.hvplot.violin(
             y="value",
             by=by,
@@ -182,51 +210,16 @@ class D4ViolinPlotView(View):
             cmap=COLORS,
             legend=False,
         )
-        return pn.FlexBox(self.param.samplesize, p)
-
-
-# class FeatureTable(View):
-#     columns = param.List(default=["feature", "size", "SI"])
-
-#     def __panel__(self):
-#         data = []
-#         for ft, ft_data in self.datastore.regions.items():
-#             data.append(
-#                 {
-#                     "feature": ft,
-#                     "SI": ft_data.format(),
-#                     "size": ft_data.total,
-#                 }
-#             )
-#         df = pd.DataFrame(data)
-#         df.set_index(["feature"], inplace=True)
-#         p = pn.widgets.Tabulator(
-#             df,
-#             pagination="remote",
-#             page_size=20,
-#             margin=10,
-#             layout="fit_data_table",
-#         )
-#         return pn.Column(pn.pane.Markdown("## Feature table"), p)
-
-
-# class SummaryTable(View):
-#     columns = param.List(
-#         default=["feature", "x", "counts", "nbases", "coverage"]
-#     )
-
-#     def __panel__(self):
-#         data = self.datastore.filtered.describe(
-#             percentiles=np.arange(0, 1, 0.1)
-#         )
-#         p = pn.widgets.Tabulator(
-#             data,
-#             pagination="remote",
-#             page_size=20,
-#             margin=10,
-#             layout="fit_data_table",
-#         )
-#         return pn.Column(pn.pane.Markdown("## Summary statistics table"), p)
+        return pn.FlexBox(
+            pn.Column(
+                pn.Row(
+                    self.param.samplesize,
+                    self.param.min_height,
+                    self.param.min_width,
+                ),
+                p,
+            )
+        )
 
 
 class D4IndicatorView(View):
@@ -255,41 +248,22 @@ class D4IndicatorView(View):
                 df[df["feature"] == k].counts[df[df["feature"] == k].x > 0]
             )
             ssize_frac = np.round(ssize / fsize * 100.0, 2)
-
-            # These should be fix!
-            gdata = self.fulldata
-            gdata = gdata[gdata["feature"] == k]
-            gdata = gdata[gdata["x"] > 0]
-            logger.info("sampling values...")
-            x = np.random.choice(
-                gdata["x"].values,
-                p=gdata["counts"].values / np.sum(gdata["counts"].values),
-                size=1_000_000,
-            )
-            mean_coverage = np.round(np.mean(x), 2)
-            median_coverage = np.round(np.median(x), 2)
-            std_coverage = np.round(np.std(x), 2)
-            pct_60_coverage = np.round(mean_coverage * 0.6, 2)
-            pct_70_coverage = np.round(mean_coverage * 0.7, 2)
-            pct_80_coverage = np.round(mean_coverage * 0.8, 2)
-            pct_90_coverage = np.round(mean_coverage * 0.9, 2)
-            median_plus_1sd = np.round(median_coverage + std_coverage, 2)
-            median_plus_2sd = np.round(median_coverage + 2 * std_coverage, 2)
+            fix_data = self.fulldata.loc[k]
             fsize_tab_list.append(
                 {
                     "feature": k,
                     "size": fsize,
                     "selected": ssize,
                     "selected (%)": ssize_frac,
-                    "Coverage: mean": mean_coverage,
-                    "median": median_coverage,
-                    "std": std_coverage,
-                    "60%": pct_60_coverage,
-                    "70%": pct_70_coverage,
-                    "80%": pct_80_coverage,
-                    "90%": pct_90_coverage,
-                    "median+1sd": median_plus_1sd,
-                    "median+2sd": median_plus_2sd,
+                    "Coverage: mean": fix_data.mean_coverage,
+                    "median": fix_data.median_coverage,
+                    "std": fix_data.std_coverage,
+                    "60%": fix_data.pct_60_coverage,
+                    "70%": fix_data.pct_70_coverage,
+                    "80%": fix_data.pct_80_coverage,
+                    "90%": fix_data.pct_90_coverage,
+                    "median+1sd": fix_data.median_plus_1sd,
+                    "median+2sd": fix_data.median_plus_2sd,
                 }
             )
         fsize_tab_df = pd.DataFrame(fsize_tab_list)

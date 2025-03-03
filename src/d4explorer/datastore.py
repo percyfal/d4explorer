@@ -16,8 +16,10 @@ from tqdm import tqdm
 from d4explorer import cache, config
 from d4explorer.model import D4AnnotatedHist, D4Hist, Feature, GFF3Annotation
 from d4explorer.views import (
+    D4BoxPlotView,
     D4HistogramView,
     D4IndicatorView,
+    D4ViolinPlotView,
 )
 
 logger = daiquiri.getLogger("d4explorer")
@@ -243,6 +245,42 @@ class DataStore(Viewer):
         self.dfx = self.dfx[condition]
         self.dfx = self.dfx[self.features]
 
+    def _setup_fix_data(self):
+        self.fix_data = {}
+        if self.data is None:
+            return
+        logger.info("Sampling fix data-wide estimates...")
+        data = []
+        for d4h in self.data.data:
+            logger.info(
+                "Sampling 1e6 points feature type %s", d4h.feature_type
+            )
+            x = d4h.sample(n=1_000_000)
+            mean_coverage = np.round(np.mean(x), 2)
+            median_coverage = np.round(np.median(x), 2)
+            std_coverage = np.round(np.std(x), 2)
+            pct_60_coverage = np.round(mean_coverage * 0.6, 2)
+            pct_70_coverage = np.round(mean_coverage * 0.7, 2)
+            pct_80_coverage = np.round(mean_coverage * 0.8, 2)
+            pct_90_coverage = np.round(mean_coverage * 0.9, 2)
+            median_plus_1sd = np.round(median_coverage + std_coverage, 2)
+            median_plus_2sd = np.round(median_coverage + 2 * std_coverage, 2)
+            data.append(
+                {
+                    "feature": d4h.feature_type,
+                    "mean_coverage": mean_coverage,
+                    "median_coverage": median_coverage,
+                    "std_coverage": std_coverage,
+                    "pct_60_coverage": pct_60_coverage,
+                    "pct_70_coverage": pct_70_coverage,
+                    "pct_80_coverage": pct_80_coverage,
+                    "pct_90_coverage": pct_90_coverage,
+                    "median_plus_1sd": median_plus_1sd,
+                    "median_plus_2sd": median_plus_2sd,
+                }
+            )
+        self.fix_data = pd.DataFrame(data).set_index("feature", inplace=False)
+
     @pn.depends("dataset")
     def load_data(self):
         if self.dataset.value is None:
@@ -250,6 +288,7 @@ class DataStore(Viewer):
         logger.info("Loading data for dataset %s", self.dataset.value)
         self.data = self.cache.get(self.dataset.value)
         self._setup_data()
+        self._setup_fix_data()
 
     def add_data(self, data):
         """Add data to the cache."""
@@ -271,15 +310,15 @@ class DataStore(Viewer):
         if self.load_data_button.value:
             self.load_data()
         indicator = D4IndicatorView(
-            data=self.dfx.rx.value, fulldata=self.data.df()
+            data=self.dfx.rx.value, fulldata=self.fix_data
         )
 
         hv = D4HistogramView(data=self.dfx.rx.value)
 
-        # boxplot = D4BoxPlotView(data=self.dfx.rx.value)
-        # violinplot = D4ViolinPlotView(data=self.dfx.rx.value)
+        boxplot = D4BoxPlotView(data=self.dfx.rx.value)
+        violinplot = D4ViolinPlotView(data=self.dfx.rx.value)
 
-        return pn.Column(*[indicator, hv])  # , boxplot, violinplot])
+        return pn.Column(*[indicator, hv, pn.Row(*[boxplot, violinplot])])
 
     def sidebar(self) -> pn.Card:
         return pn.Column(
