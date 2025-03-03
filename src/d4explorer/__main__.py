@@ -14,15 +14,16 @@ from . import app  # noqa
 from . import __version__  # noqa
 from d4explorer import datastore  # noqa
 from d4explorer import cache  # noqa
-from d4explorer import scratch  # noqa
-from .views import (  # noqa
-    Histogram,
-    BoxPlot,
-    ViolinPlot,
-    SummaryTable,
-    Indicators,
-    FeatureTable,
-)
+from d4explorer import model  # noqa
+# from d4explorer import scratch  # noqa
+# from .views import (  # noqa
+#     Histogram,
+#     BoxPlot,
+#     ViolinPlot,
+#     SummaryTable,
+#     Indicators,
+#     FeatureTable,
+# )
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -86,6 +87,7 @@ def annotation_file_option(default: str = None) -> Callable[[FC], FC]:
     return click.option(
         "--annotation-file",
         default=default,
+        type=click.Path(exists=True),
         help="Annotation file in gff format",
     )
 
@@ -147,12 +149,12 @@ def _serve(path, max_bins, servable=False, **kw):
     app_ = app.App(
         datastore=ds,
         views={
-            "indicators": Indicators,
-            "summarytable": SummaryTable,
-            "featuretable": FeatureTable,
-            "histogram": Histogram,
-            "boxplot": BoxPlot,
-            "violinplot": ViolinPlot,
+            # "indicators": Indicators,
+            # "summarytable": SummaryTable,
+            # "featuretable": FeatureTable,
+            # "histogram": Histogram,
+            # "boxplot": BoxPlot,
+            # "violinplot": ViolinPlot,
         },
         title=path,
     )
@@ -203,12 +205,17 @@ def oldserve(path, port, show, threads, max_bins, servable, cachedir):
 def preprocess(path, annotation_file, threads, max_bins, cachedir):
     """Preprocess data for the app"""
     d4cache = cache.D4ExplorerCache(cachedir)
+    annotation_file = Path(annotation_file)
+
     for p in path:
+        p = Path(p)
         logger.info("Preprocessing %s", p)
-        key = cache.CacheData.cache_key(Path(p), max_bins)
+        key = model.D4AnnotatedHist.cache_key(
+            p, max_bins=max_bins, annotation=annotation_file
+        )
 
         if d4cache.has_key(key):
-            logger.info("Preprocessing is cached")
+            logger.info("Preprocessing is cached: %s", key)
             continue
 
         data = datastore.preprocess(

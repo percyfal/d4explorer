@@ -86,11 +86,8 @@ def test_preprocessannot(d4file, gff):
 
 def test_datastore_load_data(ds):
     keys = ds.cache.keys
+    assert ds.data is None
     for k in keys:
         ds.dataset.value = k
         ds.load_data()
-        # print(ds.data)
-        # print(ds.data.data)
-        # print(ds.data.regions["genome"])
-        # assert isinstance(ds.data, CacheDataView)
-        # print(type(ds.data))
+        assert isinstance(ds.data, D4AnnotatedHist)

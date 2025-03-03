@@ -1,3 +1,4 @@
+import daiquiri
 import panel as pn
 import param
 from panel.viewable import Viewer
@@ -5,7 +6,13 @@ from panel.viewable import Viewer
 from . import __version__
 from .datastore import DataStore
 
+daiquiri.setup(level="WARN")  # noqa
+
+
+logger = daiquiri.getLogger("d4explorer")
 pn.extension("vega", throttled=True)
+pn.extension(sizing_mode="stretch_width")
+
 
 RAW_CSS = """
         .sidenav#sidebar {
@@ -21,7 +28,7 @@ DEFAULT_PARAMS = {
 }
 
 
-class App(Viewer):
+class OldApp(Viewer):
     datastore = param.ClassSelector(class_=DataStore)
 
     title = param.String()
@@ -84,3 +91,33 @@ class App(Viewer):
             raw_css=[RAW_CSS],
             **DEFAULT_PARAMS,
         )
+
+
+class App(Viewer):
+    datastore = param.ClassSelector(class_=DataStore)
+
+    def __init__(self, **params):
+        super().__init__(**params)
+
+    def view(self):
+        self._template = pn.template.FastListTemplate(
+            title="D4 Explorer",
+            sidebar=[self.datastore.sidebar],
+            main=self.datastore,
+        )
+        return self._template
+
+
+def serve(servable, **kw):
+    """Serve the app"""
+    logger.info("Serving main app")
+
+    kwargs = {}
+    if "cachedir" in kw:
+        kwargs["cachedir"] = kw.pop("cachedir")
+    ds = DataStore(**kwargs)
+    app_ = App(datastore=ds)
+
+    if servable:
+        return app_.view().servable()
+    return pn.serve(app_.view(), **kw)

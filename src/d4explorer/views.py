@@ -9,7 +9,8 @@ from panel.viewable import Viewer
 from bokeh.models import CustomJSHover
 from holoviews.plotting.util import process_cmap
 
-from .datastore import DataStore, order_features
+# from .datastore import DataStore, order_features
+from d4explorer.model import D4AnnotatedHist
 
 
 hv.extension("bokeh")
@@ -31,104 +32,42 @@ COLORS = process_cmap(
 )
 
 
-def make_vector(df, sample_size):
-    """Make vector from dataframe."""
-    n = np.sum(df["counts"])
-    if int(sample_size) > n.rx.value:
-        feat = df["feature"].rx.value.unique()
-        logger.warning(
-            (
-                "Sample size (n=%i) is larger than the data (n=%i); "
-                "resampling values for feature %s"
-            ),
-            int(sample_size),
-            n.rx.value,
-            ",".join(feat),
-        )
-    try:
-        y = np.random.choice(
-            df["x"].rx.value,
-            size=int(sample_size),
-            p=df["counts"].rx.value / n.rx.value,
-        )
-    except ValueError:
-        logger.warning("Issue sampling data")
-        y = np.zeros(int(sample_size))
-    return y
+# def make_vector(df, sample_size):
+#     """Make vector from dataframe."""
+#     n = np.sum(df["counts"])
+#     if int(sample_size) > n.rx.value:
+#         feat = df["feature"].rx.value.unique()
+#         logger.warning(
+#             (
+#                 "Sample size (n=%i) is larger than the data (n=%i); "
+#                 "resampling values for feature %s"
+#             ),
+#             int(sample_size),
+#             n.rx.value,
+#             ",".join(feat),
+#         )
+#     try:
+#         y = np.random.choice(
+#             df["x"].rx.value,
+#             size=int(sample_size),
+#             p=df["counts"].rx.value / n.rx.value,
+#         )
+#     except ValueError:
+#         logger.warning("Issue sampling data")
+#         y = np.zeros(int(sample_size))
+#     return y
 
 
-class CacheDataView(Viewer):
-    # data = param.ClassSelector(class_=CacheData)
-    data = param.ClassSelector(class_=pd.DataFrame)
-
-    def __init__(self, **params):
-        super().__init__(**params)
-        try:
-            self.dfx = self.params.data.rx()
-        except AttributeError:
-            print("no such attribute rx")
-
-    @property
-    def shape(self):
-        """Return shape of coverage data"""
-        return self.data.data.shape
-
-
-class CDHistogram(CacheDataView):
-    def __panel__(self):
-        return pn.Column("### Tried panel")
-        # if self.dfx is None:
-        #     return pn.Column("No data loaded")
-        # bases_formatter = CustomJSHover(
-        #     code="""
-        #     const num = (value/1e6).toFixed(2);
-        #     return num + ' Mbp';
-        #     """
-        # )
-        # coverage_formatter = CustomJSHover(
-        #     code="""
-        #     return value.toFixed(2) + 'X';
-        #     """
-        # )
-        # df = self.dfx.rx.value.data
-        # p = df.hvplot.bar(
-        #     x="x",
-        #     y="counts",
-        #     by="feature",
-        #     fill_alpha=0.5,
-        #     min_height=self.min_height,
-        #     min_width=self.min_width,
-        #     title="Coverage Histogram",
-        #     xlabel="coverage",
-        #     hover_cols=["nbases", "coverage"],
-        #     hover_tooltips=[
-        #         ("Feature", "@feature"),
-        #         ("NBases", "@nbases{custom}"),
-        #         ("Coverage", "@coverage{custom}"),
-        #         ("Counts", "@counts"),
-        #         ("X", "@x"),
-        #     ],
-        #     hover_formatters={
-        #         "@{nbases}": bases_formatter,
-        #         "@{coverage}": coverage_formatter,
-        #     },
-        #     responsive=True,
-        #     rot=45,
-        #     legend=False,
-        #     color=COLORS,
-        # )
-        # return pn.Column(
-        #     pn.pane.Markdown("## Coverage histogram"), pn.FlexBox(p)
-        # )
+def make_group_data(df, sample_size):
+    pass
 
 
 class View(Viewer):
-    datastore = param.ClassSelector(class_=DataStore)
-    min_height = param.Integer(default=400)
-    min_width = param.Integer(default=400)
+    data = param.ClassSelector(class_=D4AnnotatedHist)
+    fulldata = param.ClassSelector(class_=pd.DataFrame)
 
 
-class Histogram(View):
+class D4HistogramView(View):
     unit = param.Selector(
         default="Mbp", doc="Unit of bins", objects=["bp", "Kbp", "Mbp", "Gbp"]
     )
@@ -138,6 +77,11 @@ class Histogram(View):
 
     @pn.depends("unit")
     def __panel__(self):
+        if len(self.data.data) == 0:
+            return pn.Column(
+                pn.pane.Markdown("# Coverage histogram"),
+                pn.pane.Markdown("No data available"),
+            )
         bases_formatter = CustomJSHover(
             code=f"""
             const num = (value/{self.factors[self.unit]}).toFixed(2);
@@ -149,7 +93,8 @@ class Histogram(View):
             return value.toFixed(2) + 'X';
             """
         )
-        df = self.datastore.filtered
+        df = self.data.df()
+
         p = df.hvplot.bar(
             x="x",
             y="counts",
@@ -177,42 +122,11 @@ class Histogram(View):
             color=COLORS,
         )
         return pn.Column(
-            pn.pane.Markdown("## Coverage histogram"), pn.FlexBox(p)
+            pn.pane.Markdown("# Coverage histogram"), pn.FlexBox(p)
         )
 
 
-def make_group_data(df, samplesize):
-    data = {}
-    for group, group_data in df.groupby(["feature"]):
-        sample = make_vector(group_data, samplesize)
-        data[group.rx.value] = sample
-    if len(group.rx.value) == 1:
-        index = ["index"]
-        id_vars = None
-        data_df = pd.DataFrame(data)
-    elif len(group.rx.value) == 2:
-        index = ["index", "path"]
-        id_vars = ["path"]
-        data_df = pd.DataFrame(data).stack(future_stack=True)
-    else:
-        raise ValueError("Too many groups")
-    columns = data_df.columns.tolist()
-    data = data_df.reset_index(names=index).melt(
-        value_vars=columns, var_name="feature", id_vars=id_vars
-    )
-    data["feature"] = data["feature"].astype("category")
-    data["feature"] = data["feature"].cat.set_categories(
-        order_features(data["feature"].cat.categories.values), ordered=True
-    )
-    if len(index) == 2:
-        data["path"] = data["path"].astype("category")
-        data = data.sort_values(["feature", "path"])
-    else:
-        data = data.sort_values(["feature"])
-    return data
-
-
-class BoxPlot(View):
+class D4BoxPlotView(View):
     samplesize = param.Integer(
         default=10000,
         doc=(
@@ -241,7 +155,7 @@ class BoxPlot(View):
         return pn.FlexBox(self.param.samplesize, p)
 
 
-class ViolinPlot(View):
+class D4ViolinPlotView(View):
     samplesize = param.Integer(
         default=10000,
         doc=(
@@ -271,152 +185,135 @@ class ViolinPlot(View):
         return pn.FlexBox(self.param.samplesize, p)
 
 
-class FeatureTable(View):
-    columns = param.List(default=["feature", "size", "SI"])
+# class FeatureTable(View):
+#     columns = param.List(default=["feature", "size", "SI"])
 
+#     def __panel__(self):
+#         data = []
+#         for ft, ft_data in self.datastore.regions.items():
+#             data.append(
+#                 {
+#                     "feature": ft,
+#                     "SI": ft_data.format(),
+#                     "size": ft_data.total,
+#                 }
+#             )
+#         df = pd.DataFrame(data)
+#         df.set_index(["feature"], inplace=True)
+#         p = pn.widgets.Tabulator(
+#             df,
+#             pagination="remote",
+#             page_size=20,
+#             margin=10,
+#             layout="fit_data_table",
+#         )
+#         return pn.Column(pn.pane.Markdown("## Feature table"), p)
+
+
+# class SummaryTable(View):
+#     columns = param.List(
+#         default=["feature", "x", "counts", "nbases", "coverage"]
+#     )
+
+#     def __panel__(self):
+#         data = self.datastore.filtered.describe(
+#             percentiles=np.arange(0, 1, 0.1)
+#         )
+#         p = pn.widgets.Tabulator(
+#             data,
+#             pagination="remote",
+#             page_size=20,
+#             margin=10,
+#             layout="fit_data_table",
+#         )
+#         return pn.Column(pn.pane.Markdown("## Summary statistics table"), p)
+
+
+class D4IndicatorView(View):
     def __panel__(self):
-        data = []
-        for ft, ft_data in self.datastore.regions.items():
-            data.append(
+        tooltip = pn.widgets.TooltipIcon(
+            value=(
+                "The coverage ranges are computed from a "
+                "random sample of 10,000 bases from the "
+                "genome. The lower and upper suggested "
+                "thresholds are defined as in Lou 2021 "
+                "(10.1111/mec.16077)"
+            )
+        )
+        if len(self.data.data) == 0:
+            return pn.Column(
+                pn.Row(pn.pane.Markdown("# Feature size indicators"), tooltip),
+                pn.pane.Markdown("No data available"),
+            )
+
+        region_size = {x.feature.name: len(x.feature) for x in self.data.data}
+        fsize_tab_list = []
+        for k, v in region_size.items():
+            df = self.data.df()
+            fsize = v
+            ssize = np.sum(
+                df[df["feature"] == k].counts[df[df["feature"] == k].x > 0]
+            )
+            ssize_frac = np.round(ssize / fsize * 100.0, 2)
+
+            # These should be fix!
+            gdata = self.fulldata
+            gdata = gdata[gdata["feature"] == k]
+            gdata = gdata[gdata["x"] > 0]
+            logger.info("sampling values...")
+            x = np.random.choice(
+                gdata["x"].values,
+                p=gdata["counts"].values / np.sum(gdata["counts"].values),
+                size=1_000_000,
+            )
+            mean_coverage = np.round(np.mean(x), 2)
+            median_coverage = np.round(np.median(x), 2)
+            std_coverage = np.round(np.std(x), 2)
+            pct_60_coverage = np.round(mean_coverage * 0.6, 2)
+            pct_70_coverage = np.round(mean_coverage * 0.7, 2)
+            pct_80_coverage = np.round(mean_coverage * 0.8, 2)
+            pct_90_coverage = np.round(mean_coverage * 0.9, 2)
+            median_plus_1sd = np.round(median_coverage + std_coverage, 2)
+            median_plus_2sd = np.round(median_coverage + 2 * std_coverage, 2)
+            fsize_tab_list.append(
                 {
-                    "feature": ft,
-                    "SI": ft_data.format(),
-                    "size": ft_data.total,
+                    "feature": k,
+                    "size": fsize,
+                    "selected": ssize,
+                    "selected (%)": ssize_frac,
+                    "Coverage: mean": mean_coverage,
+                    "median": median_coverage,
+                    "std": std_coverage,
+                    "60%": pct_60_coverage,
+                    "70%": pct_70_coverage,
+                    "80%": pct_80_coverage,
+                    "90%": pct_90_coverage,
+                    "median+1sd": median_plus_1sd,
+                    "median+2sd": median_plus_2sd,
                 }
             )
-        df = pd.DataFrame(data)
-        df.set_index(["feature"], inplace=True)
-        p = pn.widgets.Tabulator(
-            df,
+        fsize_tab_df = pd.DataFrame(fsize_tab_list)
+        fsize_tab_df.set_index(["feature"], inplace=True)
+
+        stylesheet = """
+        .tabulator-header {
+        font-size: 20pt;
+        }
+        .tabulator-cell {
+        font-size: 16pt;
+        }
+        """
+
+        fsize_tab_widget = pn.widgets.Tabulator(
+            fsize_tab_df,
             pagination="remote",
             page_size=20,
             margin=10,
             layout="fit_data_table",
+            stylesheets=[stylesheet],
         )
-        return pn.Column(pn.pane.Markdown("## Feature table"), p)
-
-
-class SummaryTable(View):
-    columns = param.List(
-        default=["feature", "x", "counts", "nbases", "coverage"]
-    )
-
-    def __panel__(self):
-        data = self.datastore.filtered.describe(
-            percentiles=np.arange(0, 1, 0.1)
-        )
-        p = pn.widgets.Tabulator(
-            data,
-            pagination="remote",
-            page_size=20,
-            margin=10,
-            layout="fit_data_table",
-        )
-        return pn.Column(pn.pane.Markdown("## Summary statistics table"), p)
-
-
-class Indicators(View):
-    def __panel__(self):
-        df = self.datastore.filtered
-        data = self.datastore.feature_data
-
-        gdata = self.datastore.data
-        gdata = gdata[gdata["feature"] == "genome"]
-        gdata = gdata[gdata["x"] > 0]
-        logger.info("sampling values...")
-        x = np.random.choice(
-            gdata["x"].values,
-            p=gdata["counts"].values / np.sum(gdata["counts"].values),
-            size=1_000_000,
-        )
-        logger.info("done!")
 
         return pn.Column(
-            pn.pane.Markdown("## Feature size indicators"),
-            pn.FlexBox(
-                pn.indicators.Number(
-                    value=np.sum(df.counts),
-                    name="Selected feature size",
-                    format="{value:,}",
-                    font_size="20pt",
-                ),
-                pn.indicators.Number(
-                    value=np.sum(data.counts),
-                    name="Total feature size",
-                    format="{value:,}",
-                    font_size="20pt",
-                ),
-                pn.indicators.Number(
-                    value=np.sum(df.counts) / np.sum(data.counts) * 100,
-                    name="Selected feature size (%)",
-                    format="{value:,.2f}",
-                    font_size="20pt",
-                ),
-            ),
-            pn.pane.Markdown("## Genome-wide coverage indicators"),
-            pn.FlexBox(
-                pn.indicators.Number(
-                    value=np.mean(x),
-                    name="Mean coverage",
-                    format="{value:,.2f}",
-                    font_size="20pt",
-                ),
-                pn.indicators.Number(
-                    value=np.median(x),
-                    name="Median coverage",
-                    format="{value:,.2f}",
-                    font_size="20pt",
-                ),
-                pn.indicators.Number(
-                    value=np.std(x),
-                    name="Std coverage",
-                    format="{value:,.2f}",
-                    font_size="20pt",
-                ),
-                pn.indicators.Number(
-                    value=np.mean(x) * 0.6,
-                    name="60% coverage",
-                    format="{value:,.2f}",
-                    font_size="20pt",
-                ),
-                pn.indicators.Number(
-                    value=np.mean(x) * 0.7,
-                    name="70% coverage",
-                    format="{value:,.2f}",
-                    font_size="20pt",
-                ),
-                pn.indicators.Number(
-                    value=np.mean(x) * 0.8,
-                    name="80% coverage",
-                    format="{value:,.2f}",
-                    font_size="20pt",
-                ),
-                pn.indicators.Number(
-                    value=np.mean(x) * 0.9,
-                    name="90% coverage",
-                    format="{value:,.2f}",
-                    font_size="20pt",
-                ),
-                pn.indicators.Number(
-                    value=np.median(x) + np.std(x),
-                    name="median + 1sd",
-                    format="{value:,.2f}",
-                    font_size="20pt",
-                ),
-                pn.indicators.Number(
-                    value=np.median(x) + 2 * np.std(x),
-                    name="median + 2sd",
-                    format="{value:,.2f}",
-                    font_size="20pt",
-                ),
-                pn.widgets.TooltipIcon(
-                    value=(
-                        "The coverage ranges are computed from a "
-                        "random sample of 10,000 bases from the "
-                        "genome. The lower and upper suggested "
-                        "thresholds are defined as in Lou 2021 "
-                        "(10.1111/mec.16077)"
-                    )
-                ),
-            ),
+            pn.Row(pn.pane.Markdown("# Feature size indicators"), tooltip),
+            pn.FlexBox(fsize_tab_widget),
         )

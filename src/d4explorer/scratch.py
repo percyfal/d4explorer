@@ -41,8 +41,6 @@ class DataStore(Viewer):
         self.dataset.options = self.cache.keys
         self.dataset.value = None
 
-    #    def _setup_data(self):
-
     @pn.depends("dataset")
     def load_data(self):
         if self.dataset.value is None:
@@ -58,7 +56,6 @@ class DataStore(Viewer):
     def shape(self):
         if self.data is None:
             return pn.Column("### Shape", "No data loaded")
-        print(self.data)
         return pn.Column(
             "### Shape", self.data.data.data.shape, self.dataset.value
         )
