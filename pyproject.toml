@@ -49,6 +49,7 @@ dev-dependencies = [
 [project.scripts]
 "d4explorer" = "d4explorer:__main__.cli"
 d4explorer-d4filter = "d4explorer.tools.d4filter:cli"
+d4explorer-summarize = "d4explorer.tools.summarize:cli"
 
 [tool.ruff]
 target-version = "py312"
