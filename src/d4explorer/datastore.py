@@ -9,11 +9,16 @@ import pandas as pd
 import panel as pn
 import param
 from panel.viewable import Viewer
+from param.reactive import rx
 from pyd4 import D4File
 from tqdm import tqdm
 
 from d4explorer import cache, config
 from d4explorer.model import D4AnnotatedHist, D4Hist, Feature, GFF3Annotation
+from d4explorer.views import (
+    D4HistogramView,
+    D4IndicatorView,
+)
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -98,6 +103,10 @@ def d4hist(args):
     """Compute histogram from d4. Call d4tools as the pyd4 interface
     is not working properly."""
     path, regions, max_bins = args
+    regions.merge()
+    regions.data.to_csv(
+        f"{regions.name}.bed", index=False, header=None, sep="\t"
+    )
     try:
         res = sp.run(
             [
@@ -138,7 +147,7 @@ def make_regions(path: Path, annotation: Path = None):
         return d4, retval
     # Assume gff3 for now
     logger.info("Reading annotation")
-    annot = GFF3Annotation(annotation)
+    annot = GFF3Annotation(Path(annotation))
     for ft in annot.feature_types:
         retval[ft] = Feature(annot[ft])
     logger.info("Made annotation regions")
@@ -176,8 +185,6 @@ def preprocess(
         d4list.append(data)
 
     logger.info("Computed summary dataframe")
-    if annotation is not None:
-        annotation = GFF3Annotation(annotation)
     data = D4AnnotatedHist(
         path=path,
         max_bins=max_bins,
@@ -210,15 +217,31 @@ class DataStore(Viewer):
         allow_None=True,
     )
 
+    slider = pn.widgets.IntRangeSlider(name="Coverage range", start=0)
+
+    features = pn.widgets.MultiChoice(name="Feature list")
+
     def __init__(self, **params):
         super().__init__(**params)
         self.cache = cache.D4ExplorerCache(self.cachedir)
         self.data = None
         self.dataset.options = self.cache.keys
-        self.dataset.value = None
+        if len(self.dataset.options) > 0:
+            self.dataset.value = self.dataset.options[0]
+        self.dfx = None
+        self.load_data()
+        if self.data is not None:
+            self.features.options = self.data.features
+        self.features.value = []
 
     def _setup_data(self):
-        pass
+        """Setup reactive components here"""
+        self.dfx = rx(self.data)
+        self.slider.end = self.dfx.max()
+        self.slider.value = (0, self.dfx.max())
+        condition = self.dfx.between(*self.slider.rx())
+        self.dfx = self.dfx[condition]
+        self.dfx = self.dfx[self.features]
 
     @pn.depends("dataset")
     def load_data(self):
@@ -226,7 +249,7 @@ class DataStore(Viewer):
             return
         logger.info("Loading data for dataset %s", self.dataset.value)
         self.data = self.cache.get(self.dataset.value)
-        print(type(self.data))
+        self._setup_data()
 
     def add_data(self, data):
         """Add data to the cache."""
@@ -236,20 +259,27 @@ class DataStore(Viewer):
     def shape(self):
         if self.data is None:
             return pn.Column("### Shape", "No data loaded")
-        return pn.Column(
-            "### Shape", self.data.data.data.shape, self.dataset.value
+        return pn.Column("### Shape", self.data.shape, self.dataset.value)
+
+    @pn.depends(
+        "dataset",
+        "load_data_button.value",
+        "slider.value_throttled",
+        "features.value",
+    )
+    def __panel__(self):
+        if self.load_data_button.value:
+            self.load_data()
+        indicator = D4IndicatorView(
+            data=self.dfx.rx.value, fulldata=self.data.df()
         )
 
-    @pn.depends("dataset", "load_data_button.value")
-    def __panel__(self):
-        self.load_data()
-        # if self.data is not None:
-        #     cdhist = CDHistogram(data=self.data)
-        # else:
-        #     print("No data loaded")
-        #     cdhist = pn.Column("Nope data loaded")
-        # return pn.Column(self.shape, cdhist)
-        return pn.Column(self.shape)
+        hv = D4HistogramView(data=self.dfx.rx.value)
+
+        # boxplot = D4BoxPlotView(data=self.dfx.rx.value)
+        # violinplot = D4ViolinPlotView(data=self.dfx.rx.value)
+
+        return pn.Column(*[indicator, hv])  # , boxplot, violinplot])
 
     def sidebar(self) -> pn.Card:
         return pn.Column(
@@ -258,6 +288,15 @@ class DataStore(Viewer):
                 self.load_data_button,
                 collapsed=False,
                 title="Dataset options",
+                header_background=config.SIDEBAR_BACKGROUND,
+                active_header_background=config.SIDEBAR_BACKGROUND,
+                styles=config.VCARD_STYLE,
+            ),
+            pn.Card(
+                self.slider,
+                self.features,
+                title="Filters",
+                collapsed=False,
                 header_background=config.SIDEBAR_BACKGROUND,
                 active_header_background=config.SIDEBAR_BACKGROUND,
                 styles=config.VCARD_STYLE,

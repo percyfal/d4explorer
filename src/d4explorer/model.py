@@ -112,6 +112,31 @@ class Feature:
     def __len__(self):
         return self._total
 
+    def merge(self):
+        if self.data.shape[0] == 0:
+            return
+
+        dflist = []
+        for g, data in self.data.groupby("seqid"):
+            data.sort_values(by=["start"], inplace=True)
+            first = True
+            for _, row in data.iterrows():
+                if first:
+                    merged_intervals = [row]
+                    first = False
+                    continue
+                last_merged = merged_intervals[-1]
+                if row.start <= last_merged.end:
+                    last_merged.end = max(last_merged.end, row.end)
+                else:
+                    merged_intervals.append(row)
+            df = pd.DataFrame(merged_intervals)
+            df.sort_values(by=["start"], inplace=True)
+            dflist.append(df)
+
+        self.data = pd.concat(dflist)
+        self._total = np.sum(self.data["end"] - self.data["start"])
+
 
 @dataclasses.dataclass
 class D4Hist:
@@ -176,7 +201,9 @@ class D4Hist:
 
     @property
     def nbases(self):
-        return self.data["counts"] * self.data["x"]
+        data = self.data["counts"] * self.data["x"]
+        data.values[0] = self.data["counts"].values[0]
+        return data
 
     @property
     def coverage(self):
@@ -214,17 +241,21 @@ class D4Hist:
 @dataclasses.dataclass
 class D4AnnotatedHist:
     data: list[D4Hist] = dataclasses.field(default_factory=list)
-    annotation: GFF3Annotation = None
+    annotation: Path = None
     genome_size: int = None
     path: Path = None
     max_bins: int = 1_000
 
     def __post_init__(self):
         assert all(isinstance(x, D4Hist) for x in self.data)
-        assert len(self.data) > 0
         assert isinstance(self.genome_size, int)
         if self.annotation is not None:
-            assert isinstance(self.annotation, GFF3Annotation)
+            assert isinstance(self.annotation, Path)
+            self._annotation_data = GFF3Annotation(self.annotation)
+
+    @property
+    def annotation_data(self):
+        return self._annotation_data
 
     def between(self, pmin, pmax):
         return self.data[0].data["x"].between(pmin, pmax)
@@ -236,12 +267,18 @@ class D4AnnotatedHist:
         elif isinstance(key, list):
             data = [x for x in self.data if x.feature_type in key]
         return D4AnnotatedHist(
-            data=data, annotation=self.annotation, genome_size=self.genome_size
+            data=data,
+            annotation=self.annotation,
+            genome_size=self.genome_size,
+            path=self.path,
+            max_bins=self.max_bins,
         )
 
     @classmethod
     def cache_key(cls, path: Path, max_bins: int, annotation: Path) -> str:
         """Generate a cache key for a given path, max_bins and annotation"""
+        if isinstance(path, str):
+            path = Path(path)
         size = path.stat().st_size
         absname = os.path.normpath(str(path.absolute()))
         return f"d4explorer:{absname}:{size}:{max_bins}:{annotation}"
@@ -249,3 +286,30 @@ class D4AnnotatedHist:
     @property
     def key(self):
         return self.cache_key(self.path, self.max_bins, self.annotation)
+
+    def min(self):
+        return self.data[0].data["x"].min()
+
+    def max(self):
+        return self.data[0].data["x"].max()
+
+    @property
+    def shape(self):
+        return self.data[0].shape
+
+    def df(self) -> pd.DataFrame:
+        """Return dataframe representation"""
+        if len(self.data) == 0:
+            return pd.DataFrame()
+        dflist = []
+        for d4h in self.data:
+            df = d4h.data.copy()
+            df["feature"] = d4h.feature_type
+            df["nbases"] = d4h.nbases
+            df["coverage"] = d4h.coverage
+            dflist.append(df)
+        return pd.concat(dflist)
+
+    @property
+    def features(self):
+        return [x.feature_type for x in self.data]
