@@ -10,7 +10,7 @@ from bokeh.models import CustomJSHover
 from holoviews.plotting.util import process_cmap
 
 # from .datastore import DataStore, order_features
-from d4explorer.model import D4AnnotatedHist
+from d4explorer.model.d4 import D4AnnotatedHist
 
 
 hv.extension("bokeh")
@@ -45,7 +45,11 @@ class D4HistogramView(View):
     min_height = param.Integer(default=400, doc="Minimum height of plot")
     min_width = param.Integer(default=400, doc="Minimum width of plot")
 
-    @pn.depends("unit")
+    @pn.depends(
+        "unit",
+        "min_height",
+        "min_width",
+    )
     def __panel__(self):
         if len(self.data.data) == 0:
             return pn.Column(
@@ -154,6 +158,7 @@ class D4BoxPlotView(View):
         )
         return pn.FlexBox(
             pn.Column(
+                pn.pane.Markdown("# Boxplot"),
                 pn.Row(
                     self.param.samplesize,
                     self.param.min_height,
@@ -184,7 +189,7 @@ class D4ViolinPlotView(View):
         df = self.data.df()
         if len(df) == 0:
             return pn.Column(
-                pn.pane.Markdown("# Boxplot"),
+                pn.pane.Markdown("# Violin plot"),
                 pn.pane.Markdown("No data available"),
             )
         dflist = []
@@ -212,6 +217,7 @@ class D4ViolinPlotView(View):
         )
         return pn.FlexBox(
             pn.Column(
+                pn.pane.Markdown("## Violin plot"),
                 pn.Row(
                     self.param.samplesize,
                     self.param.min_height,
@@ -227,8 +233,8 @@ class D4IndicatorView(View):
         tooltip = pn.widgets.TooltipIcon(
             value=(
                 "The coverage ranges are computed from a "
-                "random sample of 10,000 bases from the "
-                "genome. The lower and upper suggested "
+                "random sample of 1,000,000 bases from each "
+                "feature. The lower and upper suggested "
                 "thresholds are defined as in Lou 2021 "
                 "(10.1111/mec.16077)"
             )

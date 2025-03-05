@@ -1,4 +1,3 @@
-import sys
 from typing import Callable
 
 import click
@@ -15,15 +14,6 @@ from . import __version__  # noqa
 from d4explorer import datastore  # noqa
 from d4explorer import cache  # noqa
 from d4explorer import model  # noqa
-# from d4explorer import scratch  # noqa
-# from .views import (  # noqa
-#     Histogram,
-#     BoxPlot,
-#     ViolinPlot,
-#     SummaryTable,
-#     Indicators,
-#     FeatureTable,
-# )
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -83,6 +73,16 @@ def path_argument(
     )
 
 
+def region_argument(
+    exists: bool = True, dir_okay: bool = False, nargs: int = 1
+) -> Callable[[FC], FC]:
+    return click.argument(
+        "region",
+        type=click.Path(exists=exists, dir_okay=dir_okay),
+        nargs=nargs,
+    )
+
+
 def annotation_file_option(default: str = None) -> Callable[[FC], FC]:
     return click.option(
         "--annotation-file",
@@ -97,6 +97,14 @@ def threads_option(default: int = 1) -> Callable[[FC], FC]:
         "--threads",
         default=default,
         help="Number of threads to use for pre-processing",
+    )
+
+
+def threshold_option(default: int = 3) -> Callable[[FC], FC]:
+    return click.option(
+        "--threshold",
+        default=default,
+        help="Coverage threshold for calling a base as present",
     )
 
 
@@ -118,80 +126,10 @@ def show_option(default: bool = True) -> Callable[[FC], FC]:
     )
 
 
-# Obsolete
-def _serve(path, max_bins, servable=False, **kw):
-    logger.info("Starting panel server")
-    dlist = []
-
-    def _load_coverage(p):
-        logger.info("Loading coverage for %s", p)
-        key = cache.CacheData.cache_key(p, max_bins)
-
-        if key not in cache.cache:
-            logger.error("cache key not found")
-            logger.error("Run `d4explorer preprocess %s` first", p)
-            sys.exit(1)
-
-        # TODO: make sure regions are identical for all datasets
-        data, regions = cache.cache[key]
-        return data, regions
-
-    data, regions = _load_coverage(path)
-    dlist.append(data)
-    data = pd.concat(dlist)
-
-    ds = datastore.DataStore(
-        data=data,
-        filters=["feature", "x"],
-        regions=regions,
-        dataset=[k for k in cache.cache.iterkeys()][0],
-    )
-    app_ = app.App(
-        datastore=ds,
-        views={
-            # "indicators": Indicators,
-            # "summarytable": SummaryTable,
-            # "featuretable": FeatureTable,
-            # "histogram": Histogram,
-            # "boxplot": BoxPlot,
-            # "violinplot": ViolinPlot,
-        },
-        title=path,
-    )
-    if servable:
-        return app_.view().servable()
-    return pn.serve(app_.view(), **kw)
-
-
 @click.group()
 @click.version_option(version=__version__)
 def cli():
     """Command line interface for d4explorer."""
-
-
-@cli.command()
-@path_argument()
-@port_option()
-@show_option()
-@threads_option()
-@max_bins_option()
-@log_filter_option()
-@log_level()
-@click.option(
-    "--servable", is_flag=True, default=False, help="Make app servable"
-)
-@cachedir_option()
-def oldserve(path, port, show, threads, max_bins, servable, cachedir):
-    """Serve the app"""
-    _ = _serve(
-        path,
-        max_bins,
-        servable=servable,
-        port=port,
-        show=show,
-        verbose=False,
-        cachedir=cachedir,
-    )
 
 
 @cli.command()
@@ -225,6 +163,48 @@ def preprocess(path, annotation_file, threads, max_bins, cachedir):
 
 
 @cli.command()
+@region_argument()
+@path_argument(nargs=-1)
+@threads_option()
+@threshold_option()
+@log_filter_option()
+@log_level()
+@cachedir_option()
+def preprocess_feature_coverage(path, region, threads, threshold, cachedir):
+    """Preprocess feature coverage data."""
+    d4cache = cache.D4ExplorerCache(cachedir)
+
+    logger.info("Preprocessing feature coverage data")
+    plist = []
+    cache_keys = []
+    for p in path:
+        p = Path(p)
+        logger.info("Preprocessing %s", p)
+        key = model.D4FeatureCoverage.cache_key(
+            p, Path(region), threshold=threshold
+        )
+        cache_keys.append(key)
+        if d4cache.has_key(key):
+            logger.info("Preprocessing is cached: %s", key)
+            continue
+        plist.append(p)
+
+    if len(plist) == 0:
+        logger.info("All feature coverage files cached; exiting")
+        return
+
+    data = datastore.preprocess_feature_coverage(
+        plist, region=region, threshold=threshold, threads=threads
+    )
+    for d in data:
+        d4cache.add(d)
+    result = model.D4FeatureCoverageList(
+        keylist=cache_keys, region=region, threshold=threshold
+    )
+    d4cache.add(result)
+
+
+@cli.command()
 @port_option()
 @show_option()
 @threads_option()
@@ -232,9 +212,12 @@ def preprocess(path, annotation_file, threads, max_bins, cachedir):
 @log_level()
 @cachedir_option()
 @click.option(
+    "--summarize", is_flag=True, default=False, help="Run summarize analysis"
+)
+@click.option(
     "--servable", is_flag=True, default=False, help="Make app servable"
 )
-def serve(port, show, threads, servable, cachedir):
+def serve(port, show, threads, servable, cachedir, summarize):
     """Serve the app."""
     app.serve(
         port=port,
@@ -243,6 +226,7 @@ def serve(port, show, threads, servable, cachedir):
         servable=servable,
         cachedir=cachedir,
         verbose=False,
+        summarize=summarize,
     )
 
 

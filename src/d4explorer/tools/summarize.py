@@ -9,6 +9,8 @@ import daiquiri
 import numpy as np
 import pandas as pd
 
+from d4explorer.model.ranges import Bed
+
 from .. import __version__
 
 daiquiri.setup(level="WARN")  # noqa
@@ -71,35 +73,22 @@ def group(path, regions, threshold, output_file):
     The input D4 file should consist of five columns (strand is
     excluded). Requires bedtools to run.
     """
-    row = namedtuple("row", ["seqid", "begin", "end", "score"])
+    row = namedtuple("row", ["chrom", "begin", "end", "name", "score"])
 
-    def summarize_region(cov, chrom):
-        df = pd.DataFrame(
-            cov,
-            columns=["chrom", "start", "end", "score", "name"],
-        )
-        df = df.astype(
-            {
-                "chrom": str,
-                "start": np.int64,
-                "end": np.int64,
-                "score": np.int32,
-                "name": str,
-            }
-        )
-        for name, group in df.groupby("name"):
+    def summarize_region(cov, regions):
+        bed = Bed(pd.DataFrame(cov))
+        ft = Bed(pd.DataFrame(regions))
+        scores = []
+        for name, group in bed.data.groupby("name"):
             presabs = (group["score"] > threshold).astype(np.int8)
             widths = group["end"] - group["start"]
             cov = presabs * widths
-            output_file.write(f"{name}\t{cov.sum()}\t{widths.sum()}\n")
+            scores.append(cov.sum())
+        ft["score"] = scores
+        ft.data.to_csv(output_file, sep="\t", header=None, index=None)
 
     logger.info("Summarizing coverage data")
-    with open(regions, "r") as fh:
-        data = fh.readline().strip().split("\t")
-        if len(data) != 4:
-            raise ValueError("Region file must have four columns")
-    features = pd.read_table(regions, sep="\t", header=None)
-    features.columns = ["seqid", "start", "end", "name"]
+    features = Bed(regions)
     last = None
     first = True
     cov = []
@@ -111,32 +100,34 @@ def group(path, regions, threshold, output_file):
         universal_newlines=True,
     )
     findex = 0
-    current_feature = features.iloc[findex]
+    current_feature = features.data.iloc[findex]
+    chrom = []
     i = 0
     while True:
         line = d4view.stdout.readline().strip()
         i = i + 1
         if line == "" and d4view.poll() is not None:
             break
-        data = row(*line.strip().split("\t"))
+        data = line.strip().split("\t")
+        data.insert(3, current_feature["name"])
+        data = row(*data)
         if first:
-            last = data.seqid
+            last = data.chrom
             first = False
-        if data.seqid != last:
-            summarize_region(cov, last)
-            last = data.seqid
+        if data.chrom != last:
+            summarize_region(cov, chrom)
+            last = data.chrom
             cov = []
-        if data.seqid != current_feature["seqid"]:
-            findex = findex + 1
-            current_feature = features.iloc[findex]
-        cov.append(list(data) + [current_feature["name"]])
+            chrom = []
+        cov.append(list(data))
 
         if int(data.end) == current_feature["end"]:
+            chrom.append(current_feature)
             findex = findex + 1
             try:
-                current_feature = features.iloc[findex]
+                current_feature = features.data.iloc[findex]
             except IndexError:
                 # last row
                 pass
 
-    summarize_region(cov, last)
+    summarize_region(cov, chrom)

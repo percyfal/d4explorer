@@ -16,6 +16,7 @@ dependencies = [
     "watchfiles~=1.0.4",
     "humanize~=4.11.0",
     "param~=2.2.0",
+    "pyranges~=0.1.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.11"

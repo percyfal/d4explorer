@@ -79,24 +79,42 @@ class GFF3Annotation:
 
 @dataclasses.dataclass
 class Feature:
-    data: pd.DataFrame | GFF3Annotation
+    data: pd.DataFrame | GFF3Annotation | Path
     name: str = None
+    path: str = None
 
     def __post_init__(self):
-        if isinstance(self.data, GFF3Annotation):
-            if self.name is None:
-                self.name = self.data.feature_type
-            self.data = self.data.data[["seqid", "start", "end"]]
+        if isinstance(self.data, Path):
+            self.path = self.data
+            self.data = pd.read_table(self.data, header=None, sep="\t")
+            if self.data.shape[1] == 3:
+                self.data.columns = ["seqid", "start", "end"]
+            elif self.data.shape[1] == 4:
+                self.data.columns = ["seqid", "start", "end", "name"]
+            else:
+                logger.error("Unsupported BED format")
+                raise
         else:
-            assert all(self.data.columns.values == ["seqid", "start", "end"])
-        self._total = np.sum(self.data["end"] - self.data["start"])
+            if isinstance(self.data, GFF3Annotation):
+                if self.name is None:
+                    self.name = self.data.feature_type
+                self.data = self.data.data[["seqid", "start", "end", "type"]]
+            else:
+                if self.data.shape[1] == 3:
+                    assert all(
+                        self.data.columns.values == ["seqid", "start", "end"]
+                    )
+                elif self.data.shape[1] == 4:
+                    assert all(
+                        self.data.columns.values
+                        == ["seqid", "start", "end", "name"]
+                    )
         temp_dir = mkdtemp()
         self._temp_file = os.path.join(temp_dir, "regions.bed")
-        self.write()
 
     @property
     def total(self):
-        return self._total
+        return np.sum(self.data["end"] - self.data["start"])
 
     @property
     def temp_file(self):
@@ -109,8 +127,12 @@ class Feature:
     def format(self):
         return convert_to_si_suffix(self.total)
 
+    @property
+    def width(self):
+        return self.data["end"] - self.data["start"]
+
     def __len__(self):
-        return self._total
+        return self.total
 
     def merge(self):
         if self.data.shape[0] == 0:
@@ -135,7 +157,78 @@ class Feature:
             dflist.append(df)
 
         self.data = pd.concat(dflist)
-        self._total = np.sum(self.data["end"] - self.data["start"])
+
+
+@dataclasses.dataclass
+class D4FeatureCoverage:
+    data: pd.DataFrame
+    feature: Feature
+    path: Path
+    threshold: int
+
+    @property
+    def feature_type(self):
+        return self.feature.feature_type
+
+    @classmethod
+    def cache_key(cls, path: Path, region: Path, threshold: int) -> str:
+        """Generate a cache key for a given d4 path, feature region,
+        and threshold for presence / absence."""
+        if isinstance(path, str):
+            path = Path(path)
+        size = path.stat().st_size
+        absname = os.path.normpath(str(path.absolute()))
+        return (
+            f"d4explorer-summarize:D4FeatureCoverage:{absname}:"
+            f"{size}:{threshold}:{region.name}"
+        )
+
+    @property
+    def key(self):
+        return self.cache_key(self.path, self.feature.path, self.threshold)
+
+
+@dataclasses.dataclass
+class D4FeatureCoverageList:
+    keylist: list[str]
+    region: Path
+    threshold: int
+    label: str = None
+
+    def __len__(self):
+        return len(self.keylist)
+
+    def load(self, cache):
+        data = []
+        for k in self.keylist:
+            data.append(cache.get(k))
+
+    @classmethod
+    def cache_key(cls, region: Path, keylist: list, threshold: int):
+        if isinstance(region, str):
+            region = Path(region)
+        size = region.stat().st_size
+        absname = os.path.normpath(str(region.absolute()))
+        return (
+            f"d4explorer-summarize:D4FeatureCoverageList:{absname}:"
+            f"{size}:{threshold}:{len(keylist)}"
+        )
+
+    @property
+    def key(self):
+        return self.cache_key(
+            region=Path(self.region),
+            threshold=self.threshold,
+            keylist=self.keylist,
+        )
+
+    # FIXME: add function to load keylist and convert to matrix
+
+
+# FIXME: same as conifer.presabs.Coverage
+@dataclasses.dataclass
+class D4FeatureCoverageMatrix:
+    data: pd.DataFrame
 
 
 @dataclasses.dataclass
@@ -281,7 +374,10 @@ class D4AnnotatedHist:
             path = Path(path)
         size = path.stat().st_size
         absname = os.path.normpath(str(path.absolute()))
-        return f"d4explorer:{absname}:{size}:{max_bins}:{annotation}"
+        return (
+            f"d4explorer:D4AnnotatedHist:{absname}:{size}"
+            f":{max_bins}:{annotation}"
+        )
 
     @property
     def key(self):
