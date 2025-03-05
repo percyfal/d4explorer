@@ -170,6 +170,8 @@ mdurl==0.1.2
     # via markdown-it-py
 mistune==3.0.2
     # via nbconvert
+natsort==8.4.0
+    # via pyranges
 nbclient==0.10.0
     # via nbconvert
 nbconvert==7.16.4
@@ -178,6 +180,8 @@ nbformat==5.10.4
     # via jupyter-server
     # via nbclient
     # via nbconvert
+ncls==0.0.68
+    # via pyranges
 nest-asyncio==1.6.0
     # via ipykernel
 nodeenv==1.9.1
@@ -191,9 +195,11 @@ numpy==2.1.1
     # via contourpy
     # via holoviews
     # via hvplot
+    # via ncls
     # via pandas
     # via pyd4
     # via scipy
+    # via sorted-nearest
 overrides==7.7.0
     # via jupyter-server
 packaging==24.1
@@ -212,6 +218,7 @@ pandas==2.2.3
     # via holoviews
     # via hvplot
     # via panel
+    # via pyranges
 pandocfilters==1.5.1
     # via nbconvert
 panel==1.6.1
@@ -254,6 +261,8 @@ pygments==2.18.0
     # via ipython
     # via jupyter-console
     # via nbconvert
+pyranges==0.1.2
+    # via d4explorer
 pyright==1.1.384
 pytest==8.3.4
 python-dateutil==2.9.0.post0
@@ -306,10 +315,14 @@ six==1.16.0
 sniffio==1.3.1
     # via anyio
     # via httpx
+sorted-nearest==0.0.39
+    # via pyranges
 soupsieve==2.6
     # via beautifulsoup4
 stack-data==0.6.3
     # via ipython
+tabulate==0.9.0
+    # via pyranges
 terminado==0.18.1
     # via jupyter-server
     # via jupyter-server-terminals

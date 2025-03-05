@@ -14,7 +14,13 @@ from pyd4 import D4File
 from tqdm import tqdm
 
 from d4explorer import cache, config
-from d4explorer.model import D4AnnotatedHist, D4Hist, Feature, GFF3Annotation
+from d4explorer.model.d4 import (
+    D4AnnotatedHist,
+    D4FeatureCoverage,
+    D4Hist,
+    Feature,
+    GFF3Annotation,
+)
 from d4explorer.views import (
     D4BoxPlotView,
     D4HistogramView,
@@ -106,9 +112,10 @@ def d4hist(args):
     is not working properly."""
     path, regions, max_bins = args
     regions.merge()
-    regions.data.to_csv(
-        f"{regions.name}.bed", index=False, header=None, sep="\t"
-    )
+    # regions.data.to_csv(
+    #     f"{regions.name}.bed", index=False, header=None, sep="\t"
+    # )
+    regions.write()
     try:
         res = sp.run(
             [
@@ -132,6 +139,35 @@ def d4hist(args):
             columns=["x", "counts"],
         ),
         feature=regions,
+    )
+    return data
+
+
+def d4explorer_summarize_regions(args):
+    """Summarize coverages over regions"""
+    path, regions, threshold = args
+    try:
+        res = sp.run(
+            [
+                "d4explorer-summarize",
+                "group",
+                path,
+                regions,
+                "--threshold",
+                str(threshold),
+            ],
+            capture_output=True,
+        )
+    except sp.CalledProcessError as e:
+        logger.error(e)
+    data = D4FeatureCoverage(
+        pd.DataFrame(
+            [x.split() for x in res.stdout.decode("utf-8").split("\n") if x],
+            columns=["feature", "coverage"],
+        ),
+        feature=Feature(Path(regions)),
+        path=path,
+        threshold=threshold,
     )
     return data
 
@@ -181,7 +217,9 @@ def preprocess(
         futures.append(pool.submit(d4hist, args))
 
     d4list = []
-    for x in tqdm(futures):
+    for x in tqdm(
+        concurrent.futures.as_completed(futures), total=len(futures)
+    ):
         data = x.result()
         data.genome_size = len(regions["genome"])
         d4list.append(data)
@@ -195,6 +233,39 @@ def preprocess(
         genome_size=len(regions["genome"]),
     )
     return data
+
+
+def preprocess_feature_coverage(
+    path: list[Path],
+    region: Path,
+    threshold: int = 3,
+    threads: int = 1,
+) -> list:
+    futures = []
+    pool = MaxQueuePool(
+        concurrent.futures.ProcessPoolExecutor,
+        max_workers=threads,
+        max_queue_size=int(2 * threads),
+    )
+
+    def _make_processes():
+        for p in path:
+            yield p, region, threshold
+
+    generator = _make_processes()
+
+    for args in generator:
+        futures.append(pool.submit(d4explorer_summarize_regions, args))
+
+    plist = []
+    for x in tqdm(
+        concurrent.futures.as_completed(futures), total=len(futures)
+    ):
+        data = x.result()
+        plist.append(data)
+
+    logger.info("Computed feature coverages for %i files", len(plist))
+    return plist
 
 
 class DataStore(Viewer):
@@ -225,16 +296,23 @@ class DataStore(Viewer):
 
     def __init__(self, **params):
         super().__init__(**params)
+        self.title = "D4 Explorer"
         self.cache = cache.D4ExplorerCache(self.cachedir)
         self.data = None
-        self.dataset.options = self.cache.keys
+        self.dataset.options = [
+            x
+            for x in self.cache.keys
+            if x.startswith("d4explorer:D4AnnotatedHist")
+        ]
         if len(self.dataset.options) > 0:
             self.dataset.value = self.dataset.options[0]
         self.dfx = None
         self.load_data()
         if self.data is not None:
             self.features.options = self.data.features
-        self.features.value = []
+            self.features.value = []
+        else:
+            logger.warn("No data in cache! Run d4explorer preprocess")
 
     def _setup_data(self):
         """Setup reactive components here"""
@@ -334,6 +412,105 @@ class DataStore(Viewer):
             pn.Card(
                 self.slider,
                 self.features,
+                title="Filters",
+                collapsed=False,
+                header_background=config.SIDEBAR_BACKGROUND,
+                active_header_background=config.SIDEBAR_BACKGROUND,
+                styles=config.VCARD_STYLE,
+            ),
+        )
+
+
+class DataStoreSummarize(Viewer):
+    """Class representing the main data store for summary analyses.
+
+    Load data from cache and respond to filters to create views of the
+    data.
+    """
+
+    dataset = pn.widgets.Select(name="Dataset")
+
+    load_data_button = pn.widgets.Button(
+        name="Load Data",
+        button_type="success",
+        margin=(10, 10),
+        description="Load data from selected dataset.",
+    )
+
+    cachedir = param.Path(
+        default=cache.CACHEDIR,
+        doc="Path to cache directory",
+        allow_None=True,
+    )
+
+    # slider = pn.widgets.IntRangeSlider(name="Coverage range", start=0)
+
+    # features = pn.widgets.MultiChoice(name="Feature list")
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self.title = "D4 Explorer Summarize"
+        self.cache = cache.D4ExplorerCache(self.cachedir)
+        self.data = None
+        self.dataset.options = [
+            x
+            for x in self.cache.keys
+            if x.startswith("d4explorer-summarize:D4FeatureCoverageList")
+        ]
+        if len(self.dataset.options) > 0:
+            self.dataset.value = self.dataset.options[0]
+        self.dfx = None
+        self.load_data()
+
+    def _setup_data(self):
+        """Setup reactive components here"""
+        pass
+        # self.dfx = rx(self.data)
+        # condition = self.dfx.between(*self.slider.rx())
+        # self.dfx = self.dfx[condition]
+        # self.dfx = self.dfx[self.features]
+
+    @pn.depends("dataset")
+    def load_data(self):
+        if self.dataset.value is None:
+            return
+        logger.info("Loading data for dataset %s", self.dataset.value)
+        data = self.cache.get(self.dataset.value)
+        self.data = data.load()
+        self._setup_data()
+
+    def add_data(self, data):
+        """Add data to the cache."""
+        self.cache.add(data)
+
+    @pn.depends("dataset")
+    def shape(self):
+        if self.data is None:
+            return pn.Column("### Shape", "No data loaded")
+        return pn.Column("### Shape", self.data.shape, self.dataset.value)
+
+    @pn.depends(
+        "dataset",
+        "load_data_button.value",
+    )
+    def __panel__(self):
+        if self.load_data_button.value:
+            self.load_data()
+
+        return pn.Column(*[])
+
+    def sidebar(self) -> pn.Card:
+        return pn.Column(
+            pn.Card(
+                self.dataset,
+                self.load_data_button,
+                collapsed=False,
+                title="Dataset options",
+                header_background=config.SIDEBAR_BACKGROUND,
+                active_header_background=config.SIDEBAR_BACKGROUND,
+                styles=config.VCARD_STYLE,
+            ),
+            pn.Card(
                 title="Filters",
                 collapsed=False,
                 header_background=config.SIDEBAR_BACKGROUND,

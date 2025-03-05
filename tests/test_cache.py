@@ -10,12 +10,6 @@ def change_test_dir(tmpdir_factory, monkeypatch):
     monkeypatch.chdir(d)
 
 
-@pytest.fixture(scope="module")
-def cachedata():
-    # data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    return cache.CacheData()
-
-
 def test_d4explorer_cache(change_test_dir):
     d4cache = D4ExplorerCache()
     assert d4cache.diskcache.directory == cache.CACHEDIR

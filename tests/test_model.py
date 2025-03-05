@@ -7,7 +7,12 @@ import pytest
 from panel.viewable import Viewer
 from param.reactive import rx
 
-from d4explorer.model import D4AnnotatedHist, D4Hist, Feature, GFF3Annotation
+from d4explorer.model.d4 import (
+    D4AnnotatedHist,
+    D4Hist,
+    Feature,
+    GFF3Annotation,
+)
 
 
 @pytest.fixture
