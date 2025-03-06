@@ -9,7 +9,6 @@ from panel.viewable import Viewer
 from bokeh.models import CustomJSHover
 from holoviews.plotting.util import process_cmap
 
-# from .datastore import DataStore, order_features
 from d4explorer.model.d4 import D4AnnotatedHist
 
 
@@ -44,11 +43,20 @@ class D4HistogramView(View):
     factors = {"bp": 1, "Kbp": 1e3, "Mbp": 1e6, "Gbp": 1e9}
     min_height = param.Integer(default=400, doc="Minimum height of plot")
     min_width = param.Integer(default=400, doc="Minimum width of plot")
+    plot_type = param.Selector(
+        default="area", objects=["area", "bar"], doc="Plot type"
+    )
+
+    def __init__(self, *, xmin=0, xmax=None, **params):
+        super().__init__(**params)
+        self.xmin = xmin
+        self.xmax = xmax
 
     @pn.depends(
         "unit",
         "min_height",
         "min_width",
+        "plot_type",
     )
     def __panel__(self):
         if len(self.data.data) == 0:
@@ -68,33 +76,72 @@ class D4HistogramView(View):
             """
         )
         df = self.data.df()
+        if len(self.data) > 1:
+            self.plot_type = "area"
 
-        p = df.hvplot.bar(
-            x="x",
-            y="counts",
-            by="feature",
-            fill_alpha=0.5,
-            min_height=self.min_height,
-            min_width=self.min_width,
-            title="Coverage Histogram",
-            xlabel="coverage",
-            hover_cols=["nbases", "coverage"],
-            hover_tooltips=[
-                ("Feature", "@feature"),
-                ("NBases", "@nbases{custom}"),
-                ("Coverage", "@coverage{custom}"),
-                ("Counts", "@counts"),
-                ("X", "@x"),
-            ],
-            hover_formatters={
-                "@{nbases}": bases_formatter,
-                "@{coverage}": coverage_formatter,
-            },
-            responsive=True,
-            rot=45,
-            legend=False,
-            color=COLORS,
-        )
+        func = getattr(df.hvplot, self.plot_type)
+        if self.plot_type == "bar":
+            kw = {
+                "fill_alpha": 0.5,
+                "hover_cols": ["nbases", "coverage"],
+                "hover_tooltips": [
+                    ("Feature", "@feature"),
+                    ("NBases", "@nbases{custom}"),
+                    ("Coverage", "@coverage{custom}"),
+                    ("Counts", "@counts"),
+                    ("X", "@x"),
+                ],
+                "hover_formatters": {
+                    "@{nbases}": bases_formatter,
+                    "@{coverage}": coverage_formatter,
+                },
+                "legend": True,
+            }
+            p = func(
+                x="x",
+                y="counts",
+                min_height=self.min_height,
+                min_width=self.min_width,
+                title="Coverage Histogram",
+                xlabel="coverage",
+                responsive=True,
+                rot=45,
+                color=COLORS,
+                **kw,
+            )
+
+        elif self.plot_type == "area":
+            kw = {
+                "fill_alpha": 0.1,
+                "legend": True,
+                "by": "feature",
+            }
+
+            dims = dict(kdims=["x"], vdims=["counts"])
+            bgplots = []
+            plots = []
+            for i, (feature, group) in enumerate(
+                df.groupby("feature", sort=False)
+            ):
+                bgplots.append(
+                    hv.Area(group["counts"], label=feature, **dims).opts(
+                        hv.opts.Area(fill_alpha=0.1, color=COLORS[i])
+                    )
+                )
+                x = group["counts"].copy()
+                x[~group["mask"]] = 0
+                plots.append(
+                    hv.Area(x, label=feature, **dims).opts(
+                        hv.opts.Area(fill_alpha=0.3, color=COLORS[i])
+                    )
+                )
+            p = hv.Overlay(bgplots + plots).opts(
+                height=self.min_height,
+                responsive=True,
+                title="Area plot",
+                xlabel="coverage",
+            )
+
         return pn.Column(
             pn.pane.Markdown("# Coverage histogram"),
             pn.FlexBox(
@@ -103,6 +150,7 @@ class D4HistogramView(View):
                         self.param.unit,
                         self.param.min_height,
                         self.param.min_width,
+                        self.param.plot_type,
                     ),
                     p,
                 )
@@ -249,6 +297,8 @@ class D4IndicatorView(View):
         fsize_tab_list = []
         for k, v in region_size.items():
             df = self.data.df()
+            df = df[df["mask"]]
+
             fsize = v
             ssize = np.sum(
                 df[df["feature"] == k].counts[df[df["feature"] == k].x > 0]
@@ -277,10 +327,10 @@ class D4IndicatorView(View):
 
         stylesheet = """
         .tabulator-header {
-        font-size: 20pt;
+        font-size: 18pt;
         }
         .tabulator-cell {
-        font-size: 16pt;
+        font-size: 14pt;
         }
         """
 

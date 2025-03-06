@@ -13,7 +13,7 @@ from . import app  # noqa
 from . import __version__  # noqa
 from d4explorer import datastore  # noqa
 from d4explorer import cache  # noqa
-from d4explorer import model  # noqa
+from d4explorer.model import d4  # noqa
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -148,7 +148,7 @@ def preprocess(path, annotation_file, threads, max_bins, cachedir):
     for p in path:
         p = Path(p)
         logger.info("Preprocessing %s", p)
-        key = model.D4AnnotatedHist.cache_key(
+        key = d4.D4AnnotatedHist.cache_key(
             p, max_bins=max_bins, annotation=annotation_file
         )
 
@@ -180,7 +180,7 @@ def preprocess_feature_coverage(path, region, threads, threshold, cachedir):
     for p in path:
         p = Path(p)
         logger.info("Preprocessing %s", p)
-        key = model.D4FeatureCoverage.cache_key(
+        key = d4.D4FeatureCoverage.cache_key(
             p, Path(region), threshold=threshold
         )
         cache_keys.append(key)
@@ -198,7 +198,7 @@ def preprocess_feature_coverage(path, region, threads, threshold, cachedir):
     )
     for d in data:
         d4cache.add(d)
-    result = model.D4FeatureCoverageList(
+    result = d4.D4FeatureCoverageList(
         keylist=cache_keys, region=region, threshold=threshold
     )
     d4cache.add(result)

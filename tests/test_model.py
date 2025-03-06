@@ -240,13 +240,15 @@ def test_rx_d4annotatedhist(hist, exon_hist, gff_df, gff_df_path, genome):
     assert dfi.rx.value.data[1].feature_type == "exon"
     for x in dfi.rx.value.data:
         assert x.shape == (6, 2)
+        assert sum(x.mask) == 0
     pmin = IParam(integer=0)
     pmax = IParam(integer=2)
     irange = dfi.between(pmin.param.integer, pmax.param.integer)
     dfi = dfi[irange]
     for x in dfi.rx.value.data:
-        assert x.shape == (3, 2)
-    assert dfi.rx.value.data[0].shape == (3, 2)
+        assert x.shape == (6, 2)
+        assert sum(x.mask) == 3
+    assert dfi.rx.value.data[0].shape == (6, 2)
     assert dfi.rx.value.data[0].feature_type == "genome"
     assert dfi.rx.value.data[1].feature_type == "exon"
     features = LParam(ls=["exon"])

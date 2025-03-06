@@ -36,43 +36,6 @@ CARD_STYLE = """
   padding: {padding};
 }} """  # noqa
 
-GFF3_COLUMNS = [
-    "seqid",
-    "source",
-    "type",
-    "start",
-    "end",
-    "score",
-    "strand",
-    "phase",
-    "attributes",
-]
-
-KNOWN_FEATURES = [
-    "genome",
-    "intergenic",
-    "gene",
-    "mRNA",
-    "CDS",
-    "exon",
-    "UTR",
-    "five_prime_UTR",
-    "three_prime_UTR",
-]
-
-
-def order_features(values):
-    order = []
-    if isinstance(values, np.ndarray):
-        values = values.tolist()
-    for ft in KNOWN_FEATURES:
-        if ft in values:
-            order.append(ft)
-            values.remove(ft)
-    if len(values) > 0:
-        order.extend(values)
-    return order
-
 
 class MaxQueuePool:
     """This Class wraps a concurrent.futures.Executor limiting the
@@ -112,9 +75,6 @@ def d4hist(args):
     is not working properly."""
     path, regions, max_bins = args
     regions.merge()
-    # regions.data.to_csv(
-    #     f"{regions.name}.bed", index=False, header=None, sep="\t"
-    # )
     regions.write()
     try:
         res = sp.run(
@@ -316,6 +276,8 @@ class DataStore(Viewer):
 
     def _setup_data(self):
         """Setup reactive components here"""
+        if self.data is None:
+            return
         self.dfx = rx(self.data)
         self.slider.end = self.dfx.max()
         self.slider.value = (0, self.dfx.max())
@@ -387,11 +349,16 @@ class DataStore(Viewer):
     def __panel__(self):
         if self.load_data_button.value:
             self.load_data()
+        if self.data is None:
+            return pn.pane.Alert("No data in cache", alert_type="warning")
         indicator = D4IndicatorView(
             data=self.dfx.rx.value, fulldata=self.fix_data
         )
-
-        hv = D4HistogramView(data=self.dfx.rx.value)
+        hv = D4HistogramView(
+            data=self.dfx.rx.value,
+            xmin=self.slider.rx.value[0],
+            xmax=self.slider.rx.value[1],
+        )
 
         boxplot = D4BoxPlotView(data=self.dfx.rx.value)
         violinplot = D4ViolinPlotView(data=self.dfx.rx.value)
