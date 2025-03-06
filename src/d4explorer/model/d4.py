@@ -236,6 +236,7 @@ class D4Hist:
     data: pd.DataFrame
     feature: Feature
     genome_size: int = None
+    mask: pd.Series = None
 
     def __post_init__(self):
         assert self.data.shape[1] == 2, (
@@ -260,6 +261,8 @@ class D4Hist:
                 + 1
             )
         self.data = self.data.astype(int)
+        if self.mask is None:
+            self.mask = pd.Series([False] * self.data.shape[0])
 
     def __getitem__(self, key):
         data = self.data[key]
@@ -307,7 +310,7 @@ class D4Hist:
     def sample(self, n, random_seed=None):
         if random_seed is not None:
             np.random.seed(random_seed)
-        total_size = np.sum(self.data["counts"])
+        total_size = np.sum(self.data["counts"][self.mask])
         if n > total_size:
             logger.warning(
                 (
@@ -320,10 +323,10 @@ class D4Hist:
             )
         try:
             y = np.random.choice(
-                self.data["x"],
+                self.data["x"][self.mask],
                 size=n,
                 replace=True,
-                p=self.data["counts"] / total_size,
+                p=self.data["counts"][self.mask] / total_size,
             )
         except ValueError:
             logger.warning("Resampling failed; returning zeros vector")
@@ -356,7 +359,9 @@ class D4AnnotatedHist:
     def __getitem__(self, key):
         """Allow slicing with boolean Series or list of strings for features"""
         if isinstance(key, pd.Series):
-            data = [x[key] for x in self.data]
+            data = self.data
+            for x in data:
+                x.mask = key
         elif isinstance(key, list):
             data = [x for x in self.data if x.feature_type in key]
         return D4AnnotatedHist(
@@ -403,9 +408,13 @@ class D4AnnotatedHist:
             df["feature"] = d4h.feature_type
             df["nbases"] = d4h.nbases
             df["coverage"] = d4h.coverage
+            df["mask"] = d4h.mask
             dflist.append(df)
         return pd.concat(dflist)
 
     @property
     def features(self):
         return [x.feature_type for x in self.data]
+
+    def __len__(self):
+        return len(self.data)
