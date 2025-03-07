@@ -4,7 +4,8 @@ import pandas as pd
 import pytest
 
 from d4explorer.datastore import DataStore, make_regions, preprocess
-from d4explorer.model.d4 import D4AnnotatedHist, D4Hist, Feature
+from d4explorer.model.d4 import D4AnnotatedHist, D4Hist
+from d4explorer.model.feature import Feature
 
 
 @pytest.fixture(scope="module")

@@ -4,11 +4,12 @@ import dataclasses
 import os
 from enum import Enum
 from pathlib import Path
-from tempfile import mkdtemp
 
 import daiquiri
 import numpy as np
 import pandas as pd
+
+from .feature import Feature, GFF3Annotation
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -20,215 +21,6 @@ class DataTypes(Enum):
     DATAFRAME = "df"
     BED = "bed"
     D4 = "d4"
-
-
-GFF3_COLUMNS = [
-    "seqid",
-    "source",
-    "type",
-    "start",
-    "end",
-    "score",
-    "strand",
-    "phase",
-    "attributes",
-]
-
-
-def convert_to_si_suffix(number):
-    """Convert a number to a string with an SI suffix."""
-    suffixes = [" ", "kbp", "Mbp", "Gbp", "Tbp"]
-    power = len(str(int(number))) // 3
-    return f"{number / 1000 ** power:.1f} {suffixes[power]}"
-
-
-@dataclasses.dataclass
-class GFF3Annotation:
-    """GFF3 annotation dataclass."""
-
-    data: pd.DataFrame | Path
-    feature_type: str = "genome"
-
-    def __post_init__(self):
-        if isinstance(self.data, Path):
-            self._read()
-        assert self.data.shape[1] == 9, (
-            "Data must have nine columns; saw shape %s" % str(self.data.shape)
-        )
-        self.data.columns = GFF3_COLUMNS
-
-    def _read(self):
-        self.data = pd.read_table(
-            self.data, comment="#", header=None, sep="\t"
-        )
-
-    def __getitem__(self, key):
-        """Return annotation for specific feature type"""
-        return GFF3Annotation(
-            self.data[self.data["type"] == key], feature_type=key
-        )
-
-    @property
-    def shape(self):
-        return self.data.shape
-
-    @property
-    def feature_types(self):
-        return self.data["type"].unique()
-
-
-@dataclasses.dataclass
-class Feature:
-    data: pd.DataFrame | GFF3Annotation | Path
-    name: str = None
-    path: str = None
-
-    def __post_init__(self):
-        if isinstance(self.data, Path):
-            self.path = self.data
-            self.data = pd.read_table(self.data, header=None, sep="\t")
-            if self.data.shape[1] == 3:
-                self.data.columns = ["seqid", "start", "end"]
-            elif self.data.shape[1] == 4:
-                self.data.columns = ["seqid", "start", "end", "name"]
-            else:
-                logger.error("Unsupported BED format")
-                raise
-        else:
-            if isinstance(self.data, GFF3Annotation):
-                if self.name is None:
-                    self.name = self.data.feature_type
-                self.data = self.data.data[["seqid", "start", "end", "type"]]
-            else:
-                if self.data.shape[1] == 3:
-                    assert all(
-                        self.data.columns.values == ["seqid", "start", "end"]
-                    )
-                elif self.data.shape[1] == 4:
-                    assert all(
-                        self.data.columns.values
-                        == ["seqid", "start", "end", "name"]
-                    )
-        temp_dir = mkdtemp()
-        self._temp_file = os.path.join(temp_dir, "regions.bed")
-
-    @property
-    def total(self):
-        return np.sum(self.data["end"] - self.data["start"])
-
-    @property
-    def temp_file(self):
-        return self._temp_file
-
-    def write(self):
-        logger.info("Writing regions to %s", self.temp_file)
-        self.data.to_csv(self.temp_file, sep="\t", index=False)
-
-    def format(self):
-        return convert_to_si_suffix(self.total)
-
-    @property
-    def width(self):
-        return self.data["end"] - self.data["start"]
-
-    def __len__(self):
-        return self.total
-
-    def merge(self):
-        if self.data.shape[0] == 0:
-            return
-
-        dflist = []
-        for g, data in self.data.groupby("seqid"):
-            data.sort_values(by=["start"], inplace=True)
-            first = True
-            for _, row in data.iterrows():
-                if first:
-                    merged_intervals = [row]
-                    first = False
-                    continue
-                last_merged = merged_intervals[-1]
-                if row.start <= last_merged.end:
-                    last_merged.end = max(last_merged.end, row.end)
-                else:
-                    merged_intervals.append(row)
-            df = pd.DataFrame(merged_intervals)
-            df.sort_values(by=["start"], inplace=True)
-            dflist.append(df)
-
-        self.data = pd.concat(dflist)
-
-
-@dataclasses.dataclass
-class D4FeatureCoverage:
-    data: pd.DataFrame
-    feature: Feature
-    path: Path
-    threshold: int
-
-    @property
-    def feature_type(self):
-        return self.feature.feature_type
-
-    @classmethod
-    def cache_key(cls, path: Path, region: Path, threshold: int) -> str:
-        """Generate a cache key for a given d4 path, feature region,
-        and threshold for presence / absence."""
-        if isinstance(path, str):
-            path = Path(path)
-        size = path.stat().st_size
-        absname = os.path.normpath(str(path.absolute()))
-        return (
-            f"d4explorer-summarize:D4FeatureCoverage:{absname}:"
-            f"{size}:{threshold}:{region.name}"
-        )
-
-    @property
-    def key(self):
-        return self.cache_key(self.path, self.feature.path, self.threshold)
-
-
-@dataclasses.dataclass
-class D4FeatureCoverageList:
-    keylist: list[str]
-    region: Path
-    threshold: int
-    label: str = None
-
-    def __len__(self):
-        return len(self.keylist)
-
-    def load(self, cache):
-        data = []
-        for k in self.keylist:
-            data.append(cache.get(k))
-
-    @classmethod
-    def cache_key(cls, region: Path, keylist: list, threshold: int):
-        if isinstance(region, str):
-            region = Path(region)
-        size = region.stat().st_size
-        absname = os.path.normpath(str(region.absolute()))
-        return (
-            f"d4explorer-summarize:D4FeatureCoverageList:{absname}:"
-            f"{size}:{threshold}:{len(keylist)}"
-        )
-
-    @property
-    def key(self):
-        return self.cache_key(
-            region=Path(self.region),
-            threshold=self.threshold,
-            keylist=self.keylist,
-        )
-
-    # FIXME: add function to load keylist and convert to matrix
-
-
-# FIXME: same as conifer.presabs.Coverage
-@dataclasses.dataclass
-class D4FeatureCoverageMatrix:
-    data: pd.DataFrame
 
 
 @dataclasses.dataclass
@@ -262,7 +54,7 @@ class D4Hist:
             )
         self.data = self.data.astype(int)
         if self.mask is None:
-            self.mask = pd.Series([False] * self.data.shape[0])
+            self.mask = pd.Series([True] * self.data.shape[0])
 
     def __getitem__(self, key):
         data = self.data[key]
@@ -310,7 +102,8 @@ class D4Hist:
     def sample(self, n, random_seed=None):
         if random_seed is not None:
             np.random.seed(random_seed)
-        total_size = np.sum(self.data["counts"][self.mask])
+        total_size = np.sum(self.data["counts"][self.mask.values])
+        print(total_size)
         if n > total_size:
             logger.warning(
                 (
@@ -323,10 +116,10 @@ class D4Hist:
             )
         try:
             y = np.random.choice(
-                self.data["x"][self.mask],
+                self.data["x"][self.mask.values],
                 size=n,
                 replace=True,
-                p=self.data["counts"][self.mask] / total_size,
+                p=self.data["counts"][self.mask.values] / total_size,
             )
         except ValueError:
             logger.warning("Resampling failed; returning zeros vector")

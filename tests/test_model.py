@@ -10,6 +10,8 @@ from param.reactive import rx
 from d4explorer.model.d4 import (
     D4AnnotatedHist,
     D4Hist,
+)
+from d4explorer.model.feature import (
     Feature,
     GFF3Annotation,
 )
@@ -165,12 +167,16 @@ def test_rx_d4hist(hist, genome):
     pmin = IParam(integer=0)
     pmax = IParam(integer=10)
     condition = dfi.data["x"].between(pmin.param.integer, pmax.param.integer)
-    dfi = dfi[condition]
-    assert dfi.rx.value.data.shape == (5, 2)
+    dfi.rx.value.mask = condition.rx.value
+    assert dfi.rx.value.data.shape == (6, 2)
+    assert sum(dfi.rx.value.mask) == 5
     sample1 = dfi.rx.value.sample(n=20, random_seed=42)
     pmin.integer = 1
     pmax.integer = 3
-    assert dfi.rx.value.data.shape == (3, 2)
+    dfi.rx.value.mask = (
+        dfi.data["x"].between(pmin.param.integer, pmax.param.integer).rx.value
+    )
+    assert dfi.rx.value.data.shape == (6, 2)
     sample2 = dfi.rx.value.sample(n=20, random_seed=42)
     with pytest.raises(AssertionError):
         np.testing.assert_array_equal(sample1, sample2)
@@ -240,7 +246,7 @@ def test_rx_d4annotatedhist(hist, exon_hist, gff_df, gff_df_path, genome):
     assert dfi.rx.value.data[1].feature_type == "exon"
     for x in dfi.rx.value.data:
         assert x.shape == (6, 2)
-        assert sum(x.mask) == 0
+        assert sum(x.mask) == 6
     pmin = IParam(integer=0)
     pmax = IParam(integer=2)
     irange = dfi.between(pmin.param.integer, pmax.param.integer)
