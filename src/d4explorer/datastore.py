@@ -14,14 +14,13 @@ from pyd4 import D4File
 from tqdm import tqdm
 
 from d4explorer import cache, config
+from d4explorer.model.coverage import D4FeatureCoverage
 from d4explorer.model.d4 import (
     D4AnnotatedHist,
-    D4FeatureCoverage,
     D4Hist,
-    Feature,
-    GFF3Annotation,
 )
-from d4explorer.views import (
+from d4explorer.model.feature import Feature, GFF3Annotation
+from d4explorer.views.d4 import (
     D4BoxPlotView,
     D4HistogramView,
     D4IndicatorView,

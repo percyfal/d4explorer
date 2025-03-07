@@ -7,28 +7,15 @@ import pandas as pd
 import daiquiri
 from panel.viewable import Viewer
 from bokeh.models import CustomJSHover
-from holoviews.plotting.util import process_cmap
 
 from d4explorer.model.d4 import D4AnnotatedHist
-
+from .config import COLORS
 
 hv.extension("bokeh")
 pn.extension("tabulator")
 
 
-logger = daiquiri.getLogger("d4explorer")
-
-CMAP_GLASBEY = {
-    cm.name: cm
-    for cm in hv.plotting.util.list_cmaps(
-        records=True, category="Categorical", reverse=False
-    )
-    if cm.name.startswith("glasbey")
-}
-colormap = "glasbey_hv"
-COLORS = process_cmap(
-    CMAP_GLASBEY[colormap].name, provider=CMAP_GLASBEY[colormap].provider
-)
+logger = daiquiri.getLogger("d4explorer:view:d4")
 
 
 class View(Viewer):
