@@ -89,7 +89,6 @@ def test_datastore_load_data(ds):
     keys = ds.cache.keys
     assert ds.data is None
     for k in keys:
-        print(k)
         ds.dataset.value = k
         # ds.load_data()
         # assert isinstance(ds.data, D4AnnotatedHist)

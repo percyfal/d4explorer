@@ -104,11 +104,11 @@ def genome():
 
 
 def test_annotation_path(gff):
-    GFF3(gff)
+    GFF3(data=gff)
 
 
 def test_annotation(gff_df):
-    gff = GFF3(gff_df)
+    gff = GFF3(data=gff_df)
     np.testing.assert_array_equal(gff.feature_types, ["gene", "rRNA", "exon"])
     assert gff.shape == (4, 9)
     gff = gff["gene"]
@@ -116,22 +116,22 @@ def test_annotation(gff_df):
 
 
 def test_annotation_features(gff_df):
-    gff = GFF3(gff_df)
+    gff = GFF3(data=gff_df)
     exons = gff["exon"]
-    exons_ft = Feature(exons)
+    exons_ft = Feature(data=exons)
     assert len(exons_ft) == 40
-    assert len(Feature(gff["gene"])) == 130
+    assert len(Feature(data=gff["gene"])) == 130
 
 
 def test_merge_annotation_features(gff_df_overlap):
-    gff = GFF3(gff_df_overlap)
-    gene = Feature(gff["gene"])
+    gff = GFF3(data=gff_df_overlap)
+    gene = Feature(data=gff["gene"])
     gene.merge()
     assert len(gene) == 160
 
 
 def test_d4hist(hist, genome):
-    d4hist = D4Hist(hist, feature=Feature(genome, "genome"))
+    d4hist = D4Hist(data=hist, feature=Feature(genome, "genome"))
     assert d4hist.data.shape == (6, 2)
     assert d4hist.data["x"].dtype == np.int64
     assert d4hist.max_bin == 3
@@ -149,7 +149,7 @@ def test_d4hist(hist, genome):
 
 def test_d4hist_trimmed(hist, genome):
     data = hist[(hist["x"] != "<0") & (hist["x"] != ">3")]
-    d4hist = D4Hist(data, feature=Feature(genome, "genome"))
+    d4hist = D4Hist(data=data, feature=Feature(data=genome, name="genome"))
     assert d4hist.data.shape == (4, 2)
     assert d4hist.data["x"].dtype == np.int64
     assert d4hist.max_bin == 2
@@ -162,7 +162,7 @@ class IParam(Viewer):
 
 
 def test_rx_d4hist(hist, genome):
-    d4hist = D4Hist(hist, feature=Feature(genome, "genome"))
+    d4hist = D4Hist(data=hist, feature=Feature(data=genome, name="genome"))
     dfi = rx(d4hist)
     pmin = IParam(integer=0)
     pmax = IParam(integer=10)
@@ -183,14 +183,18 @@ def test_rx_d4hist(hist, genome):
 
 
 def test_d4hist_w_annotation(hist, gene_hist, exon_hist, gff_df, genome):
-    gff = GFF3(gff_df)
-    genome = Feature(genome, "genome")
-    d4hist = D4Hist(hist, feature=genome, genome_size=len(genome))
+    gff = GFF3(data=gff_df)
+    genome = Feature(data=genome, name="genome")
+    d4hist = D4Hist(data=hist, feature=genome, genome_size=len(genome))
     exon_hist = D4Hist(
-        exon_hist, feature=Feature(gff["exon"]), genome_size=len(genome)
+        data=exon_hist,
+        feature=Feature(data=gff["exon"]),
+        genome_size=len(genome),
     )
     gene_hist = D4Hist(
-        gene_hist, feature=Feature(gff["gene"]), genome_size=len(genome)
+        data=gene_hist,
+        feature=Feature(data=gff["gene"]),
+        genome_size=len(genome),
     )
     assert d4hist.feature_type == "genome"
     assert d4hist.feature.name == "genome"
@@ -207,11 +211,13 @@ def test_d4hist_w_annotation(hist, gene_hist, exon_hist, gff_df, genome):
 
 
 def test_d4annotatedhist(hist, exon_hist, gff_df, gff_df_path, genome):
-    gff = GFF3(gff_df)
-    genome = Feature(genome, "genome")
-    d4hist = D4Hist(hist, feature=genome, genome_size=len(genome))
+    gff = GFF3(data=gff_df)
+    genome = Feature(data=genome, name="genome")
+    d4hist = D4Hist(data=hist, feature=genome, genome_size=len(genome))
     d4exon_hist = D4Hist(
-        exon_hist, feature=Feature(gff["exon"]), genome_size=len(genome)
+        data=exon_hist,
+        feature=Feature(data=gff["exon"]),
+        genome_size=len(genome),
     )
     D4AnnotatedHist(
         data=[d4hist, d4exon_hist],
@@ -229,11 +235,13 @@ class LParam(Viewer):
 
 
 def test_rx_d4annotatedhist(hist, exon_hist, gff_df, gff_df_path, genome):
-    gff = GFF3(gff_df)
-    genome = Feature(genome, "genome")
-    d4hist = D4Hist(hist, feature=genome, genome_size=len(genome))
+    gff = GFF3(data=gff_df)
+    genome = Feature(data=genome, name="genome")
+    d4hist = D4Hist(data=hist, feature=genome, genome_size=len(genome))
     d4exon_hist = D4Hist(
-        exon_hist, feature=Feature(gff["exon"]), genome_size=len(genome)
+        data=exon_hist,
+        feature=Feature(data=gff["exon"]),
+        genome_size=len(genome),
     )
     ds = D4AnnotatedHist(
         data=[d4hist, d4exon_hist],

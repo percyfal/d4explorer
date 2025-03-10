@@ -1,8 +1,11 @@
 import dataclasses
+import os
 from pathlib import Path
 
 import daiquiri
 import pandas as pd
+
+from d4explorer.metadata import get_data_schema
 
 from .ranges import GFF3, Bed
 
@@ -27,21 +30,23 @@ class Feature(Bed):
         if isinstance(self.data, Path) or isinstance(self.data, str):
             self.path = self.data
             try:
-                self.data = Bed(self.data).data
+                self.data = Bed(data=self.data).data
             except ValueError:
-                self.data = GFF3(self.data)
+                self.data = GFF3(data=self.data)
                 self.data = self.data.data[["seqid", "start", "end", "type"]]
         else:
             if isinstance(self.data, GFF3):
                 if self.name is None:
-                    self.name = self.data.label
+                    self.name = self.data.name
                 self.data = self.data.data[["seqid", "start", "end", "type"]]
+
             elif isinstance(self.data, Bed):
                 self.data = self.data.data
             elif isinstance(self.data, pd.DataFrame):
                 pass
             else:
                 raise ValueError("Unsupported data type")
+        self.metadata_schema = get_data_schema()
         super().__post_init__()
 
     def format(self):
@@ -70,3 +75,15 @@ class Feature(Bed):
             dflist.append(df)
 
         self.data = pd.concat(dflist)
+
+    @classmethod
+    def cache_key(cls, path: Path, name: str):
+        if isinstance(path, str):
+            path = Path(path)
+        if path is not None:
+            size = path.stat().st_size
+            absname = os.path.normpath(str(path.absolute()))
+        else:
+            size = "NA"
+            absname = "None"
+        return f"d4explorer:Feature:{absname}:{size}:{name}"

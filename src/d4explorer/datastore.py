@@ -73,20 +73,25 @@ class MaxQueuePool:
 def d4hist(args):
     """Compute histogram from d4. Call d4tools as the pyd4 interface
     is not working properly."""
-    path, regions, max_bins = args
+    path, regions, max_bins, threads = args
     regions.merge()
     regions.write()
-    cmd = [
-        "d4tools",
+    software = "d4tools"
+    parameters = [
         "stat",
-        "-s",
+        "--stat",
         "hist",
-        "-r",
-        str(regions.temp_file),
         "--max-bin",
         str(max_bins),
         str(path),
     ]
+    parameters_nopickle = [
+        "--threads",
+        str(threads),
+        "--region",
+        str(regions.temp_file),
+    ]
+    cmd = [software] + parameters + parameters_nopickle
     logger.info("Running %s", " ".join(cmd))
     try:
         res = sp.run(
@@ -96,12 +101,28 @@ def d4hist(args):
     except sp.CalledProcessError as e:
         logger.error(e)
     data = D4Hist(
-        pd.DataFrame(
+        data=pd.DataFrame(
             [x.split() for x in res.stdout.decode("utf-8").split("\n") if x],
             columns=["x", "counts"],
         ),
         feature=regions,
     )
+    data.metadata = {
+        "id": data.cache_key(path, max_bins, regions.name),
+        "path": str(path),
+        "version": "0.1",
+        "parameters": " ".join(parameters),
+        "software": software,
+        "class": "D4Hist",
+    }
+    data.feature.metadata = {
+        "id": data.feature.cache_key(data.feature.path, data.feature.name),
+        "path": str(data.feature.path),
+        "version": "0.1",
+        "parameters": "",
+        "software": "d4explorer",
+        "class": "Feature",
+    }
     return data
 
 
@@ -138,17 +159,18 @@ def make_regions(path: Path, annotation: Path = None):
     d4 = D4File(str(path))
 
     genome = Feature(
-        pd.DataFrame([(x[0], 0, x[1]) for x in d4.chroms()]),
+        data=pd.DataFrame([(x[0], 0, x[1]) for x in d4.chroms()]),
         name="genome",
+        path=annotation,
     )
     retval = {"genome": genome}
     if annotation is None:
         return d4, retval
     # Assume gff3 for now
     logger.info("Reading annotation")
-    annot = GFF3(Path(annotation))
+    annot = GFF3(data=Path(annotation))
     for ft in annot.feature_types:
-        retval[ft] = Feature(annot[ft])
+        retval[ft] = Feature(data=annot[ft], path=annot.path)
     logger.info("Made annotation regions")
     return d4, retval
 
@@ -159,18 +181,19 @@ def preprocess(
     annotation: Path = None,
     max_bins: int = 1_000,
     threads: int = 1,
+    workers: int = 1,
 ) -> D4AnnotatedHist:
     d4, regions = make_regions(path, annotation)
     futures = []
     pool = MaxQueuePool(
         concurrent.futures.ProcessPoolExecutor,
         max_workers=threads,
-        max_queue_size=int(2 * threads),
+        max_queue_size=int(workers),
     )
 
     def _make_processes():
         for reg in regions.values():
-            yield path, reg, max_bins
+            yield path, reg, max_bins, threads
 
     generator = _make_processes()
 
@@ -201,12 +224,13 @@ def preprocess_feature_coverage(
     region: Path,
     threshold: int = 3,
     threads: int = 1,
+    workers: int = 1,
 ) -> list:
     futures = []
     pool = MaxQueuePool(
         concurrent.futures.ProcessPoolExecutor,
         max_workers=threads,
-        max_queue_size=int(2 * threads),
+        max_queue_size=int(workers),
     )
 
     def _make_processes():
@@ -333,7 +357,7 @@ class DataStore(Viewer):
 
     def add_data(self, data):
         """Add data to the cache."""
-        self.cache.add(data)
+        self.cache.add(value=data)
 
     @pn.depends("dataset")
     def shape(self):

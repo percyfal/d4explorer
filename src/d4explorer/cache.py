@@ -27,9 +27,11 @@ class D4ExplorerCache:
             return None
         return self.diskcache.get(key)
 
-    def add(self, value):
+    def add(self, *, value, key: str = None):
         """Add a value to the cache."""
-        self.diskcache[value.key] = value
+        if key is None:
+            key = value.key
+        self.diskcache[key] = value
 
     @property
     def key(self):

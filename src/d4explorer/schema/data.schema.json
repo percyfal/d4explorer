@@ -1,0 +1,18 @@
+{
+  "$id": "http://json-schema.org/draft-202012/schema#",
+  "$schema": "http://json-schema.org/draft-202012/schema#",
+  "codec": "json",
+  "type": "object",
+  "description": "Metadata and provenance information for a generic data object",
+  "properties": {
+    "id": {"type": "string", "description": "Unique identifier for the data object. Used as cache key."},
+    "name": {"type": "string", "description": "Data object name."},
+    "path": {"type": "string", "format": "uri-reference", "description": "Path to the data object."},
+    "version": {"type": "string", "description": "Version of the data object."},
+    "parameters": {"type": "string", "description": "Parameters used to generate the data object."},
+    "software": {"type": "string", "description": "Software used to generate the data object."},
+    "class": {"type": "string", "description": "Class of the data object."}
+  },
+  "additionalProperties": false,
+  "required": ["id", "path", "version", "parameters", "software", "class"]
+}

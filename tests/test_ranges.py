@@ -28,13 +28,13 @@ def path(tmpdir_factory, data):
 
 
 def test_ranges(data):
-    rg = Ranges(data[["seqid", "start", "end"]])
+    rg = Ranges(data=data[["seqid", "start", "end"]])
     assert rg.width == 260
 
 
 def test_bed(data, path):
-    bed1 = Bed(data)
-    bed2 = Bed(path)
+    bed1 = Bed(data=data)
+    bed2 = Bed(data=path)
     assert bed1.data.equals(bed2.data)
     assert bed1.bedtype == bed2.bedtype
     assert bed1.path != bed2.path
@@ -43,18 +43,18 @@ def test_bed(data, path):
 
 
 def test_gff3(gff_df, gff_df_path):
-    gff1 = GFF3(gff_df)
-    gff2 = GFF3(gff_df_path)
+    gff1 = GFF3(data=gff_df)
+    gff2 = GFF3(data=gff_df_path)
     assert gff1.data.equals(gff2.data)
     assert gff1.width == 260
     assert gff2.width == 260
     assert gff1.shape == (4, 9)
     assert gff2.shape == (4, 9)
     exon = gff1["exon"]
-    assert exon.label == "exon"
+    assert exon.name == "exon"
     assert exon.shape == (1, 9)
     assert exon.width == 40
     gene = gff2["gene"]
     assert gene.shape == (2, 9)
     assert gene.width == 130
-    assert gene.label == "gene"
+    assert gene.name == "gene"

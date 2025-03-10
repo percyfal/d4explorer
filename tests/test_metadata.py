@@ -1,6 +1,11 @@
 import pytest
 
-from d4explorer.metadata import Schema
+from d4explorer.metadata import (
+    Schema,
+    get_data_schema,
+    get_datacollection_schema,
+)
+from d4explorer.model.metadata import MetadataBaseClass
 
 
 @pytest.fixture
@@ -16,6 +21,29 @@ def data():
     }
 
 
+@pytest.fixture
+def datacollection():
+    return {
+        "id": "123",
+        "name": "test",
+        "version": "1.0",
+        "parameters": "test",
+        "software": "test",
+        "class": "test",
+        "members": ["123", "234", "345"],
+    }
+
+
+@pytest.fixture
+def data_schema():
+    return get_data_schema()
+
+
+@pytest.fixture
+def datacollection_schema():
+    return get_datacollection_schema()
+
+
 def test_null_schema():
     schema = Schema(None)
     assert schema.empty_value == b""
@@ -27,33 +55,36 @@ def test_empty_dict_schema():
     assert schema.validate({}) == {}
 
 
-def test_data_schema(data):
-    schema = Schema(
-        {
-            "type": "object",
-            "codec": "json",
-            "properties": {
-                "id": {"type": "string"},
-                "name": {"type": "string"},
-                "path": {"format": "uri-reference", "type": "string"},
-                "version": {"type": "string"},
-                "parameters": {"type": "string"},
-                "software": {"type": "string"},
-                "class": {"type": "string"},
-            },
-            "required:": [
-                "id",
-                "name",
-                "path",
-                "version",
-                "parameters",
-                "software",
-                "class",
-            ],
-            "additionalProperties": True,
-        }
-    )
+def test_data_schema(data, data_schema):
+    schema = Schema(data_schema)
     schema.validate(data)
     data["id"] = 123
     with pytest.raises(Exception):
         schema.validate(data)
+
+
+def test_datacollection_schema(datacollection, datacollection_schema):
+    schema = Schema(datacollection_schema)
+    schema.validate(datacollection)
+    datacollection["members"] = [123, 234, "345"]
+    with pytest.raises(Exception):
+        schema.validate(datacollection)
+
+
+def test_mbc():
+    mbc = MetadataBaseClass()
+    assert mbc.metadata == {}
+    assert mbc.metadata_schema == {}
+    mbc.metadata = {"id": "123"}
+    assert mbc.metadata == {"id": "123"}
+    mbc.metadata_schema = {"type": "object"}
+    mbc.metadata = {"id": "12"}
+    mbc.metadata_schema = {
+        "type": "object",
+        "properties": {
+            "id": {"type": "string"},
+        },
+    }
+    mbc.metadata = {"id": "123"}
+    with pytest.raises(Exception):
+        mbc.metadata = {"id": 123}
