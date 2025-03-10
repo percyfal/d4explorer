@@ -73,11 +73,11 @@ def group(path, regions, threshold, output_file):
     The input D4 file should consist of five columns (strand is
     excluded). Requires bedtools to run.
     """
-    row = namedtuple("row", ["chrom", "begin", "end", "name", "score"])
+    row = namedtuple("row", ["seqid", "begin", "end", "name", "score"])
 
-    def summarize_region(cov, regions):
+    def summarize_region(cov, ranges):
         bed = Bed(pd.DataFrame(cov))
-        ft = Bed(pd.DataFrame(regions))
+        ft = Bed(pd.DataFrame(ranges))
         scores = []
         for name, group in bed.data.groupby("name"):
             presabs = (group["score"] > threshold).astype(np.int8)
@@ -101,7 +101,7 @@ def group(path, regions, threshold, output_file):
     )
     findex = 0
     current_feature = features.data.iloc[findex]
-    chrom = []
+    ranges = []
     i = 0
     while True:
         line = d4view.stdout.readline().strip()
@@ -112,17 +112,17 @@ def group(path, regions, threshold, output_file):
         data.insert(3, current_feature["name"])
         data = row(*data)
         if first:
-            last = data.chrom
+            last = data.seqid
             first = False
-        if data.chrom != last:
-            summarize_region(cov, chrom)
-            last = data.chrom
+        if data.seqid != last:
+            summarize_region(cov, ranges)
+            last = data.seqid
             cov = []
-            chrom = []
+            ranges = []
         cov.append(list(data))
 
         if int(data.end) == current_feature["end"]:
-            chrom.append(current_feature)
+            ranges.append(current_feature)
             findex = findex + 1
             try:
                 current_feature = features.data.iloc[findex]
@@ -130,4 +130,4 @@ def group(path, regions, threshold, output_file):
                 # last row
                 pass
 
-    summarize_region(cov, chrom)
+    summarize_region(cov, ranges)

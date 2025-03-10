@@ -9,7 +9,8 @@ import daiquiri
 import numpy as np
 import pandas as pd
 
-from .feature import Feature, GFF3Annotation
+from .feature import Feature
+from .ranges import GFF3
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -140,7 +141,7 @@ class D4AnnotatedHist:
         assert isinstance(self.genome_size, int)
         if self.annotation is not None:
             assert isinstance(self.annotation, Path)
-            self._annotation_data = GFF3Annotation(self.annotation)
+            self._annotation_data = GFF3(self.annotation)
 
     @property
     def annotation_data(self):

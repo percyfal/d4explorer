@@ -12,8 +12,8 @@ from d4explorer.model.d4 import (
     D4Hist,
 )
 from d4explorer.model.feature import (
+    GFF3,
     Feature,
-    GFF3Annotation,
 )
 
 
@@ -104,11 +104,11 @@ def genome():
 
 
 def test_annotation_path(gff):
-    GFF3Annotation(gff)
+    GFF3(gff)
 
 
 def test_annotation(gff_df):
-    gff = GFF3Annotation(gff_df)
+    gff = GFF3(gff_df)
     np.testing.assert_array_equal(gff.feature_types, ["gene", "rRNA", "exon"])
     assert gff.shape == (4, 9)
     gff = gff["gene"]
@@ -116,7 +116,7 @@ def test_annotation(gff_df):
 
 
 def test_annotation_features(gff_df):
-    gff = GFF3Annotation(gff_df)
+    gff = GFF3(gff_df)
     exons = gff["exon"]
     exons_ft = Feature(exons)
     assert len(exons_ft) == 40
@@ -124,7 +124,7 @@ def test_annotation_features(gff_df):
 
 
 def test_merge_annotation_features(gff_df_overlap):
-    gff = GFF3Annotation(gff_df_overlap)
+    gff = GFF3(gff_df_overlap)
     gene = Feature(gff["gene"])
     gene.merge()
     assert len(gene) == 160
@@ -183,7 +183,7 @@ def test_rx_d4hist(hist, genome):
 
 
 def test_d4hist_w_annotation(hist, gene_hist, exon_hist, gff_df, genome):
-    gff = GFF3Annotation(gff_df)
+    gff = GFF3(gff_df)
     genome = Feature(genome, "genome")
     d4hist = D4Hist(hist, feature=genome, genome_size=len(genome))
     exon_hist = D4Hist(
@@ -207,7 +207,7 @@ def test_d4hist_w_annotation(hist, gene_hist, exon_hist, gff_df, genome):
 
 
 def test_d4annotatedhist(hist, exon_hist, gff_df, gff_df_path, genome):
-    gff = GFF3Annotation(gff_df)
+    gff = GFF3(gff_df)
     genome = Feature(genome, "genome")
     d4hist = D4Hist(hist, feature=genome, genome_size=len(genome))
     d4exon_hist = D4Hist(
@@ -229,7 +229,7 @@ class LParam(Viewer):
 
 
 def test_rx_d4annotatedhist(hist, exon_hist, gff_df, gff_df_path, genome):
-    gff = GFF3Annotation(gff_df)
+    gff = GFF3(gff_df)
     genome = Feature(genome, "genome")
     d4hist = D4Hist(hist, feature=genome, genome_size=len(genome))
     d4exon_hist = D4Hist(
