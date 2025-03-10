@@ -19,7 +19,8 @@ from d4explorer.model.d4 import (
     D4AnnotatedHist,
     D4Hist,
 )
-from d4explorer.model.feature import Feature, GFF3Annotation
+from d4explorer.model.feature import Feature
+from d4explorer.model.ranges import GFF3
 from d4explorer.views.d4 import (
     D4BoxPlotView,
     D4HistogramView,
@@ -75,19 +76,21 @@ def d4hist(args):
     path, regions, max_bins = args
     regions.merge()
     regions.write()
+    cmd = [
+        "d4tools",
+        "stat",
+        "-s",
+        "hist",
+        "-r",
+        str(regions.temp_file),
+        "--max-bin",
+        str(max_bins),
+        str(path),
+    ]
+    logger.info("Running %s", " ".join(cmd))
     try:
         res = sp.run(
-            [
-                "d4tools",
-                "stat",
-                "-s",
-                "hist",
-                "-r",
-                str(regions.temp_file),
-                "--max-bin",
-                str(max_bins),
-                path,
-            ],
+            cmd,
             capture_output=True,
         )
     except sp.CalledProcessError as e:
@@ -132,11 +135,10 @@ def d4explorer_summarize_regions(args):
 
 
 def make_regions(path: Path, annotation: Path = None):
-    columns = ["seqid", "start", "end"]
     d4 = D4File(str(path))
 
     genome = Feature(
-        pd.DataFrame([(x[0], 0, x[1]) for x in d4.chroms()], columns=columns),
+        pd.DataFrame([(x[0], 0, x[1]) for x in d4.chroms()]),
         name="genome",
     )
     retval = {"genome": genome}
@@ -144,7 +146,7 @@ def make_regions(path: Path, annotation: Path = None):
         return d4, retval
     # Assume gff3 for now
     logger.info("Reading annotation")
-    annot = GFF3Annotation(Path(annotation))
+    annot = GFF3(Path(annotation))
     for ft in annot.feature_types:
         retval[ft] = Feature(annot[ft])
     logger.info("Made annotation regions")

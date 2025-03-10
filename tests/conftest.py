@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import pandas as pd
 import panel as pn
 import pytest
 from pytest import fixture
@@ -50,3 +51,36 @@ def sum_d4():
 @pytest.fixture(scope="session")
 def count_d4():
     return pytest.dname / "data" / "count.d4"
+
+
+@pytest.fixture(scope="session")
+def gff_df():
+    return pd.DataFrame(
+        {
+            "seqid": ["chr1", "chr1", "chr2", "chr2"],
+            "source": ["d4explorer"] * 4,
+            "type": ["gene", "rRNA", "gene", "exon"],
+            "start": [10, 10, 20, 20],
+            "end": [100, 100, 60, 60],
+            "score": ["."] * 4,
+            "strand": ["+", "+", "-", "-"],
+            "phase": ["."] * 4,
+            "attributes": [
+                "ID=chr1_G000001;product=5S ribosomal RNA",
+                (
+                    "ID=chr1_G000001.rRNA.1;Parent=chr1_G000001;"
+                    "product=5S ribosomal RNA"
+                ),
+                "ID=chr2_G000001;product=exon 1",
+                "ID=chr2_G000001.exon.1;Parent=chr2_G000001;product=exon 1",
+            ],
+        }
+    )
+
+
+@pytest.fixture(scope="session")
+def gff_df_path(gff_df, tmpdir_factory):
+    p = tmpdir_factory.mktemp("annotation")
+    outfile = p / "annotation.gff"
+    gff_df.to_csv(str(outfile), index=False, header=None, sep="\t")
+    return Path(outfile)
