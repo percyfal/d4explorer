@@ -1,4 +1,5 @@
 import dataclasses
+import os
 from enum import Enum
 from pathlib import Path
 from tempfile import mkdtemp
@@ -6,6 +7,8 @@ from tempfile import mkdtemp
 import daiquiri
 import numpy as np
 import pandas as pd
+
+from .metadata import MetadataBaseClass
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -35,8 +38,8 @@ def bed_columns(bt):
     return columns[: bt.value]
 
 
-@dataclasses.dataclass
-class Ranges:
+@dataclasses.dataclass(kw_only=True)
+class Ranges(MetadataBaseClass):
     """Ranges object"""
 
     data: pd.DataFrame | Path | str
@@ -72,7 +75,7 @@ class Ranges:
         self.data.to_csv(self.temp_file, sep="\t", index=False)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class Bed(Ranges):
     """Bed object"""
 
@@ -133,15 +136,16 @@ class Bed(Ranges):
         return self.data[key]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class GFF3(Ranges):
     """GFF3 dataclass."""
 
     data: pd.DataFrame | Path | str
-    label: str = None
+    path: Path = None
 
     def __post_init__(self):
         if isinstance(self.data, Path) or isinstance(self.data, str):
+            self.path = Path(self.data)
             self._read()
         assert self.data.shape[1] == 9, (
             "Data must have nine columns; saw shape %s" % str(self.data.shape)
@@ -150,13 +154,25 @@ class GFF3(Ranges):
 
     def _read(self):
         self.data = pd.read_table(
-            self.data, comment="#", header=None, sep="\t"
+            self.path, comment="#", header=None, sep="\t"
         )
 
     def __getitem__(self, key):
         """Return annotation for specific feature type"""
-        return GFF3(self.data[self.data["type"] == key], label=key)
+        return GFF3(data=self.data[self.data["type"] == key], name=key)
 
     @property
     def feature_types(self):
         return self.data["type"].unique()
+
+    @classmethod
+    def cache_key(cls, path: Path):
+        if isinstance(path, str):
+            path = Path(path)
+        size = path.stat().st_size
+        absname = os.path.normpath(str(path.absolute()))
+        return f"d4explorer:GFF3:{absname}:{size}"
+
+    @property
+    def key(self):
+        return self.cache_key(self.path)

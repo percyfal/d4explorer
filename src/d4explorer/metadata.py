@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import pprint
 from typing import Any, Mapping
 
@@ -82,3 +83,19 @@ class Schema:
             logger.error(ve)
             raise
         return row
+
+
+def get_data_schema():
+    base = os.path.dirname(__file__)
+    schema_file = os.path.join(base, "schema", "data.schema.json")
+    with open(schema_file) as f:
+        schema = json.load(f)
+    return dict(schema)
+
+
+def get_datacollection_schema():
+    base = os.path.dirname(__file__)
+    schema_file = os.path.join(base, "schema", "datacollection.schema.json")
+    with open(schema_file) as f:
+        schema = json.load(f)
+    return dict(schema)

@@ -8,6 +8,7 @@ daiquiri.setup(level="WARN")  # noqa
 import panel as pn  # noqa
 import pandas as pd  # noqa
 from pathlib import Path  # noqa
+import multiprocessing  # noqa
 
 from . import app  # noqa
 from . import __version__  # noqa
@@ -96,7 +97,17 @@ def threads_option(default: int = 1) -> Callable[[FC], FC]:
     return click.option(
         "--threads",
         default=default,
-        help="Number of threads to use for pre-processing",
+        help="Number of threads per worker to use for pre-processing",
+        type=click.IntRange(1, multiprocessing.cpu_count()),
+    )
+
+
+def workers_option(default: int = 1) -> Callable[[FC], FC]:
+    return click.option(
+        "--workers",
+        default=default,
+        help="Number of workers to use for pre-processing",
+        type=click.IntRange(1, multiprocessing.cpu_count()),
     )
 
 
@@ -136,11 +147,12 @@ def cli():
 @path_argument(nargs=-1)
 @annotation_file_option()
 @threads_option()
+@workers_option()
 @max_bins_option()
 @log_filter_option()
 @log_level()
 @cachedir_option()
-def preprocess(path, annotation_file, threads, max_bins, cachedir):
+def preprocess(path, annotation_file, threads, workers, max_bins, cachedir):
     """Preprocess data for the app"""
     d4cache = cache.D4ExplorerCache(cachedir)
     annotation_file = Path(annotation_file)
@@ -157,20 +169,30 @@ def preprocess(path, annotation_file, threads, max_bins, cachedir):
             # continue
 
         data = datastore.preprocess(
-            p, annotation=annotation_file, max_bins=max_bins, threads=threads
+            p,
+            annotation=annotation_file,
+            max_bins=max_bins,
+            threads=threads,
+            workers=workers,
         )
-        d4cache.add(data)
+        cache_data, metadata = data.to_cache()
+        for d, md in cache_data:
+            d4cache.add(value=(d, md), key=md.get("id"))
+        d4cache.add(value=metadata, key=metadata.get("id"))
 
 
 @cli.command()
 @region_argument()
 @path_argument(nargs=-1)
 @threads_option()
+@workers_option()
 @threshold_option()
 @log_filter_option()
 @log_level()
 @cachedir_option()
-def preprocess_feature_coverage(path, region, threads, threshold, cachedir):
+def preprocess_feature_coverage(
+    path, region, threads, workers, threshold, cachedir
+):
     """Preprocess feature coverage data."""
     d4cache = cache.D4ExplorerCache(cachedir)
 
@@ -194,7 +216,11 @@ def preprocess_feature_coverage(path, region, threads, threshold, cachedir):
         return
 
     data = datastore.preprocess_feature_coverage(
-        plist, region=region, threshold=threshold, threads=threads
+        plist,
+        region=region,
+        threshold=threshold,
+        threads=threads,
+        workers=workers,
     )
     for d in data:
         d4cache.add(d)

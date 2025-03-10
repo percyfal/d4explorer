@@ -1,0 +1,18 @@
+{
+  "$id": "http://json-schema.org/draft-202012/schema#",
+  "$schema": "http://json-schema.org/draft-202012/schema#",
+  "codec": "json",
+  "type": "object",
+  "description": "Metadata and provenance information for a generic data ",
+  "properties": {
+    "id": {"type": "string", "description": "Unique identifier for the data collection. Used as cache key."},
+    "name": {"type": "string", "description": "Data collection name."},
+    "version": {"type": "string", "description": "Version of the data collection."},
+    "parameters": {"type": "string", "description": "Parameters used to generate the data collection."},
+    "software": {"type": "string", "description": "Software used to generate the data collection."},
+    "class": {"type": "string", "description": "Class of the data collection."},
+    "members": {"type": "array", "items": {"type": "string"}, "description": "List of data IDs that are members of this data collection."}
+  },
+  "additionalProperties": false,
+  "required": ["id", "version", "parameters", "software", "class", "members"]
+}

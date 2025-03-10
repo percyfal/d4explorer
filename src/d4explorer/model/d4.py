@@ -9,7 +9,10 @@ import daiquiri
 import numpy as np
 import pandas as pd
 
+from d4explorer.metadata import get_data_schema, get_datacollection_schema
+
 from .feature import Feature
+from .metadata import MetadataBaseClass
 from .ranges import GFF3
 
 logger = daiquiri.getLogger("d4explorer")
@@ -24,8 +27,8 @@ class DataTypes(Enum):
     D4 = "d4"
 
 
-@dataclasses.dataclass
-class D4Hist:
+@dataclasses.dataclass(kw_only=True)
+class D4Hist(MetadataBaseClass):
     data: pd.DataFrame
     feature: Feature
     genome_size: int = None
@@ -56,10 +59,13 @@ class D4Hist:
         self.data = self.data.astype(int)
         if self.mask is None:
             self.mask = pd.Series([True] * self.data.shape[0])
+        self.metadata_schema = get_data_schema()
 
     def __getitem__(self, key):
         data = self.data[key]
-        return D4Hist(data, feature=self.feature, genome_size=self.genome_size)
+        return D4Hist(
+            data=data, feature=self.feature, genome_size=self.genome_size
+        )
 
     @property
     def feature_type(self):
@@ -104,7 +110,7 @@ class D4Hist:
         if random_seed is not None:
             np.random.seed(random_seed)
         total_size = np.sum(self.data["counts"][self.mask.values])
-        print(total_size)
+
         if n > total_size:
             logger.warning(
                 (
@@ -127,9 +133,31 @@ class D4Hist:
             y = np.zeros(n)
         return y
 
+    @classmethod
+    def cache_key(cls, path: Path, max_bins: int, annotation: Path) -> str:
+        """Generate a cache key for a given path, max_bins and annotation"""
+        if isinstance(path, str):
+            path = Path(path)
+        if path is not None:
+            size = path.stat().st_size
+            absname = os.path.normpath(str(path.absolute()))
+        else:
+            size = "NA"
+            absname = "None"
+        return (
+            f"d4explorer:D4Hist:{absname}:{size}" f":{max_bins}:{annotation}"
+        )
 
-@dataclasses.dataclass
-class D4AnnotatedHist:
+    def to_cache(self) -> tuple:
+        """Convert to cacheable object"""
+        return (
+            (self.data, self.metadata),
+            (self.feature.data, self.feature.metadata),
+        )
+
+
+@dataclasses.dataclass(kw_only=True)
+class D4AnnotatedHist(MetadataBaseClass):
     data: list[D4Hist] = dataclasses.field(default_factory=list)
     annotation: Path = None
     genome_size: int = None
@@ -141,7 +169,33 @@ class D4AnnotatedHist:
         assert isinstance(self.genome_size, int)
         if self.annotation is not None:
             assert isinstance(self.annotation, Path)
-            self._annotation_data = GFF3(self.annotation)
+            self._annotation_data = GFF3(data=self.annotation)
+            self._annotation_data.metadata = {
+                "id": self._annotation_data.key,
+                "version": "0.1",
+                "parameters": "annotation",
+                "software": "d4explorer",
+                "class": "GFF3",
+            }
+        self.metadata_schema = get_datacollection_schema()
+        members = []
+        try:
+            members = [x.metadata["id"] for x in self.data]
+            # Genome feature is always present
+            members.extend([x.feature.metadata["id"] for x in self.data])
+        except KeyError:
+            logger.warning("Metadata not set on members")
+        if self.annotation is not None:
+            members.extend([self.annotation_data.metadata["id"]])
+
+        self.metadata = {
+            "id": self.cache_key(self.path, self.max_bins, self.annotation),
+            "version": "0.1",
+            "parameters": "preprocess",
+            "software": "d4explorer",
+            "class": "D4AnnotatedHist",
+            "members": members,
+        }
 
     @property
     def annotation_data(self):
@@ -171,8 +225,12 @@ class D4AnnotatedHist:
         """Generate a cache key for a given path, max_bins and annotation"""
         if isinstance(path, str):
             path = Path(path)
-        size = path.stat().st_size
-        absname = os.path.normpath(str(path.absolute()))
+        if path is not None:
+            size = path.stat().st_size
+            absname = os.path.normpath(str(path.absolute()))
+        else:
+            size = "NA"
+            absname = "None"
         return (
             f"d4explorer:D4AnnotatedHist:{absname}:{size}"
             f":{max_bins}:{annotation}"
@@ -212,3 +270,15 @@ class D4AnnotatedHist:
 
     def __len__(self):
         return len(self.data)
+
+    def to_cache(self):
+        """Convert to cacheable object"""
+        data = []
+        for x in self.data:
+            for y in x.to_cache():
+                data.append(y)
+        if self.annotation is not None:
+            data.append(
+                (self.annotation_data.data, self.annotation_data.metadata)
+            )
+        return data, self.metadata

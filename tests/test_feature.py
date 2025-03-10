@@ -29,8 +29,8 @@ def path(tmpdir_factory, data):
 
 
 def test_bed_feature(data, path):
-    ft1 = Feature(Bed(data))
-    ft2 = Feature(path)
+    ft1 = Feature(data=Bed(data=data))
+    ft2 = Feature(data=path)
     assert ft1.data.equals(ft2.data)
     assert ft1.total == 260
     assert ft2.width == 260
@@ -38,8 +38,8 @@ def test_bed_feature(data, path):
 
 
 def test_gff_feature(gff_df, gff_df_path):
-    ft1 = Feature(GFF3(gff_df))
-    ft2 = Feature(gff_df_path)
+    ft1 = Feature(data=GFF3(data=gff_df))
+    ft2 = Feature(data=gff_df_path)
     assert ft1.data.equals(ft2.data)
     assert ft1.total == 260
     assert ft2.width == 260
@@ -47,9 +47,9 @@ def test_gff_feature(gff_df, gff_df_path):
     with pytest.raises(ValueError):
         # If data frame passed to feature, it is assumed to represent
         # bed format, not gff
-        Feature(gff_df)
+        Feature(data=gff_df)
 
 
 def test_feature_props(data):
-    ft = Feature(Bed(data))
+    ft = Feature(data=Bed(data=data))
     assert ft.total == 260
