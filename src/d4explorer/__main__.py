@@ -166,7 +166,7 @@ def preprocess(path, annotation_file, threads, workers, max_bins, cachedir):
 
         if d4cache.has_key(key):
             logger.info("Preprocessing is cached: %s", key)
-            # continue
+            continue
 
         data = datastore.preprocess(
             p,
