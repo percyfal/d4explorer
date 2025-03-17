@@ -100,6 +100,10 @@ def d4hist(args):
         )
     except sp.CalledProcessError as e:
         logger.error(e)
+    if res.returncode != 0:
+        logger.error("Command failed: %s", " ".join(cmd))
+        logger.error(res.stderr.decode("utf-8"))
+        raise
     data = D4Hist(
         data=pd.DataFrame(
             [x.split() for x in res.stdout.decode("utf-8").split("\n") if x],

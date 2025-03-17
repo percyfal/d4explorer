@@ -52,8 +52,10 @@ class Ranges(MetadataBaseClass):
 
     @property
     def temp_file(self):
-        temp_dir = mkdtemp()
-        return Path(temp_dir) / f"{self.__class__.__name__}.bed"
+        if not hasattr(self, "_temp_file"):
+            temp_dir = mkdtemp()
+            self._temp_file = Path(temp_dir) / f"{self.__class__.__name__}.bed"
+        return self._temp_file
 
     @property
     def width(self):
@@ -73,6 +75,7 @@ class Ranges(MetadataBaseClass):
     def write(self):
         logger.info("Writing regions to %s (%s)", self.temp_file, self.name)
         self.data.to_csv(self.temp_file, sep="\t", index=False)
+        assert self.temp_file.exists(), f"Failed to write {self.temp_file}"
 
 
 @dataclasses.dataclass(kw_only=True)
