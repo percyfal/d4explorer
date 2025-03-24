@@ -24,10 +24,6 @@ from d4explorer.__main__ import serve, preprocess
 daiquiri.setup(level="INFO")  # noqa
 logger = daiquiri.getLogger("d4explorer")
 
-if len(sys.argv) < 2:
-    logger.error("Please provide the path to a D4 file via the --args option.")
-    sys.exit(1)
-
 arglist = deque(sys.argv)
 arglist.popleft()
 argfun = arglist.popleft()
