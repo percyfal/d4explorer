@@ -84,12 +84,12 @@ def d4hist(args):
         "--max-bin",
         str(max_bins),
         str(path),
+        "--region",
+        str(regions.temp_file),
     ]
     parameters_nopickle = [
         "--threads",
         str(threads),
-        "--region",
-        str(regions.temp_file),
     ]
     cmd = [software] + parameters + parameters_nopickle
     logger.info("Running %s", " ".join(cmd))
