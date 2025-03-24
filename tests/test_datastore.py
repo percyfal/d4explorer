@@ -26,13 +26,6 @@ def sum_data(sum_d4, gff):
     return preprocess(sum_d4, annotation=gff)
 
 
-@pytest.fixture(scope="module")
-def ds(datastore, count_data, sum_data):
-    datastore.add_data(count_data)
-    datastore.add_data(sum_data)
-    return datastore
-
-
 @pytest.fixture
 def genome():
     n = 1_000_000
@@ -85,10 +78,20 @@ def test_preprocessannot(d4file, gff):
             assert len(data.feature) == 3_000_000
 
 
-def test_datastore_load_data(ds):
-    keys = ds.cache.keys
-    assert ds.data is None
-    for k in keys:
-        ds.dataset.value = k
-        # ds.load_data()
-        # assert isinstance(ds.data, D4AnnotatedHist)
+def test_datastore_cache(datastore, sum_data):
+    keys = datastore.cache.keys
+    cache_data, metadata = sum_data.to_cache()
+    for d, md in cache_data:
+        datastore.cache.add(value=(d, md), key=md.get("id"))
+    datastore.cache.add(value=metadata, key=metadata.get("id"))
+    keys = datastore.cache.keys
+    d4ah = D4AnnotatedHist.load(keys[0], datastore.cache)
+    assert isinstance(d4ah, D4AnnotatedHist)
+    assert len(d4ah.data) == 9
+    for data in d4ah.data:
+        assert isinstance(data, D4Hist)
+        if data.feature_type != "genome":
+            assert len(data.feature) != 3_000_000
+        else:
+            assert len(data.feature) == 3_000_000
+            assert data.genome_size == 3_000_000

@@ -22,7 +22,9 @@ class D4FeatureCoverage:
         return self.feature.feature_type
 
     @classmethod
-    def cache_key(cls, path: Path, region: Path, threshold: int) -> str:
+    def generate_cache_key(
+        cls, path: Path, region: Path, threshold: int
+    ) -> str:
         """Generate a cache key for a given d4 path, feature region,
         and threshold for presence / absence."""
         if isinstance(path, str):
@@ -35,8 +37,10 @@ class D4FeatureCoverage:
         )
 
     @property
-    def key(self):
-        return self.cache_key(self.path, self.feature.path, self.threshold)
+    def cache_key(self):
+        return self.generate_cache_key(
+            self.path, self.feature.path, self.threshold
+        )
 
 
 @dataclasses.dataclass
@@ -55,7 +59,7 @@ class D4FeatureCoverageList:
             data.append(cache.get(k))
 
     @classmethod
-    def cache_key(cls, region: Path, keylist: list, threshold: int):
+    def generate_cache_key(cls, region: Path, keylist: list, threshold: int):
         if isinstance(region, str):
             region = Path(region)
         size = region.stat().st_size
@@ -66,7 +70,7 @@ class D4FeatureCoverageList:
         )
 
     @property
-    def key(self):
+    def cache_key(self):
         return self.cache_key(
             region=Path(self.region),
             threshold=self.threshold,

@@ -8,6 +8,8 @@ import daiquiri
 import numpy as np
 import pandas as pd
 
+from d4explorer.metadata import get_data_schema
+
 from .metadata import MetadataBaseClass
 
 logger = daiquiri.getLogger("d4explorer")
@@ -154,6 +156,7 @@ class GFF3(Ranges):
             "Data must have nine columns; saw shape %s" % str(self.data.shape)
         )
         self.data.columns = GFF3_COLUMNS
+        self.metadata_schema = get_data_schema()
 
     def _read(self):
         self.data = pd.read_table(
@@ -169,7 +172,9 @@ class GFF3(Ranges):
         return self.data["type"].unique()
 
     @classmethod
-    def cache_key(cls, path: Path):
+    def generate_cache_key(cls, path: Path):
+        if path is None:
+            raise ValueError("Path is required to generate cache key")
         if isinstance(path, str):
             path = Path(path)
         size = path.stat().st_size
@@ -177,5 +182,17 @@ class GFF3(Ranges):
         return f"d4explorer:GFF3:{absname}:{size}"
 
     @property
-    def key(self):
-        return self.cache_key(self.path)
+    def cache_key(self):
+        return self.generate_cache_key(self.path)
+
+    @classmethod
+    def load(cls, key: str, cache):
+        cache_data = cache.get(key)
+        if cache_data is None:
+            logger.warning("GFF3: cache miss for %s", key)
+            return None
+        data, metadata = cache_data
+        assert metadata["class"] == "GFF3", (
+            f"incompatible class type {metadata['class']}"
+        )
+        return GFF3(data=data, metadata=metadata, path=metadata["path"])

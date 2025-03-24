@@ -30,7 +30,7 @@ def datacollection():
         "parameters": "test",
         "software": "test",
         "class": "test",
-        "members": ["123", "234", "345"],
+        "items": ["123", "234", "345"],
     }
 
 
@@ -66,7 +66,7 @@ def test_data_schema(data, data_schema):
 def test_datacollection_schema(datacollection, datacollection_schema):
     schema = Schema(datacollection_schema)
     schema.validate(datacollection)
-    datacollection["members"] = [123, 234, "345"]
+    datacollection["items"] = [123, 234, "345"]
     with pytest.raises(Exception):
         schema.validate(datacollection)
 
@@ -84,7 +84,12 @@ def test_mbc():
         "properties": {
             "id": {"type": "string"},
         },
+        "additionalProperties": False,
     }
     mbc.metadata = {"id": "123"}
-    with pytest.raises(Exception):
-        mbc.metadata = {"id": 123}
+    mbc.metadata["path"] = 2
+    with pytest.raises(ValueError):
+        mbc.metadata
+    mbc.metadata = {"id": 123}
+    with pytest.raises(ValueError):
+        mbc.metadata

@@ -40,6 +40,12 @@ def test_bed(data, path):
     assert bed1.path != bed2.path
     assert bed1.width == 260
     assert bed2.width == 260
+    with pytest.raises(NotImplementedError):
+        bed1.generate_cache_key()
+    with pytest.raises(NotImplementedError):
+        Bed.generate_cache_key()
+    with pytest.raises(NotImplementedError):
+        bed1.cache_key
 
 
 def test_gff3(gff_df, gff_df_path):
@@ -58,3 +64,6 @@ def test_gff3(gff_df, gff_df_path):
     assert gene.shape == (2, 9)
     assert gene.width == 130
     assert gene.name == "gene"
+    with pytest.raises(ValueError):
+        gff1.cache_key
+    assert gff2.cache_key == f"d4explorer:GFF3:{str(gff_df_path)}:332"

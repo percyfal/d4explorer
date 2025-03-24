@@ -1,14 +1,15 @@
-import hvplot.pandas  # noqa
+import daiquiri
 import holoviews as hv
+import hvplot.pandas  # noqa
 import numpy as np
+import pandas as pd
 import panel as pn
 import param
-import pandas as pd
-import daiquiri
-from panel.viewable import Viewer
 from bokeh.models import CustomJSHover
+from panel.viewable import Viewer
 
 from d4explorer.model.d4 import D4AnnotatedHist
+
 from .config import COLORS
 
 hv.extension("bokeh")
@@ -193,8 +194,8 @@ class D4BoxPlotView(View):
         )
         return pn.FlexBox(
             pn.Column(
-                pn.pane.Markdown("# Boxplot"),
-                pn.Row(
+                pn.pane.Markdown("## Boxplot"),
+                pn.Column(
                     self.param.samplesize,
                     self.param.min_height,
                     self.param.min_width,
@@ -253,7 +254,7 @@ class D4ViolinPlotView(View):
         return pn.FlexBox(
             pn.Column(
                 pn.pane.Markdown("## Violin plot"),
-                pn.Row(
+                pn.Column(
                     self.param.samplesize,
                     self.param.min_height,
                     self.param.min_width,
