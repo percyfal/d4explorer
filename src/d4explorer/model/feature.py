@@ -5,6 +5,7 @@ from pathlib import Path
 import daiquiri
 import pandas as pd
 
+from d4explorer.cache import D4ExplorerCache
 from d4explorer.metadata import get_data_schema
 
 from .ranges import GFF3, Bed
@@ -16,7 +17,7 @@ def convert_to_si_suffix(number):
     """Convert a number to a string with an SI suffix."""
     suffixes = [" ", "kbp", "Mbp", "Gbp", "Tbp"]
     power = len(str(int(number))) // 3
-    return f"{number / 1000 ** power:.1f} {suffixes[power]}"
+    return f"{number / 1000**power:.1f} {suffixes[power]}"
 
 
 @dataclasses.dataclass
@@ -26,7 +27,7 @@ class Feature(Bed):
     data: pd.DataFrame | Bed | GFF3 | Path | str
     path: str = None
 
-    def __post_init__(self):
+    def __post_init__(self, *args, **kwargs):
         if isinstance(self.data, Path) or isinstance(self.data, str):
             self.path = self.data
             try:
@@ -47,7 +48,7 @@ class Feature(Bed):
             else:
                 raise ValueError("Unsupported data type")
         self.metadata_schema = get_data_schema()
-        super().__post_init__()
+        super().__post_init__(*args, **kwargs)
 
     def format(self):
         return convert_to_si_suffix(self.total)
@@ -77,7 +78,7 @@ class Feature(Bed):
         self.data = pd.concat(dflist)
 
     @classmethod
-    def cache_key(cls, path: Path, name: str):
+    def generate_cache_key(cls, path: Path, name: str):
         if isinstance(path, str):
             path = Path(path)
         if path is not None:
@@ -87,3 +88,25 @@ class Feature(Bed):
             size = "NA"
             absname = "None"
         return f"d4explorer:Feature:{absname}:{size}:{name}"
+
+    @property
+    def cache_key(self):
+        return self.generate_cache_key(self.path, self.name)
+
+    @classmethod
+    def load(cls, key: str, cache: D4ExplorerCache):
+        cache_data = cache.get(key)
+        if cache_data is None:
+            logger.warning("Feature: cache miss for %s", key)
+            return None
+        data, metadata = cache_data
+        assert metadata["class"] == "Feature", (
+            f"incompatible class type {metadata['class']}"
+        )
+        ret = Feature(
+            data=data,
+            path=metadata["kwargs"]["path"],
+            name=metadata["kwargs"]["name"],
+        )
+        ret.metadata = metadata
+        return ret

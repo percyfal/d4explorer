@@ -15,10 +15,7 @@ from tqdm import tqdm
 
 from d4explorer import cache, config
 from d4explorer.model.coverage import D4FeatureCoverage
-from d4explorer.model.d4 import (
-    D4AnnotatedHist,
-    D4Hist,
-)
+from d4explorer.model.d4 import D4AnnotatedHist, D4Hist
 from d4explorer.model.feature import Feature
 from d4explorer.model.ranges import GFF3
 from d4explorer.views.d4 import (
@@ -111,21 +108,31 @@ def d4hist(args):
         ),
         feature=regions,
     )
-    data.metadata = {
-        "id": data.cache_key(path, max_bins, regions.name),
-        "path": str(path),
-        "version": "0.1",
-        "parameters": " ".join(parameters),
-        "software": software,
-        "class": "D4Hist",
-    }
     data.feature.metadata = {
-        "id": data.feature.cache_key(data.feature.path, data.feature.name),
+        "id": data.feature.generate_cache_key(
+            data.feature.path, data.feature.name
+        ),
         "path": str(data.feature.path),
         "version": "0.1",
         "parameters": "",
         "software": "d4explorer",
         "class": "Feature",
+        "kwargs": {
+            "name": data.feature.name,
+            "path": data.feature.path,
+        },
+    }
+    data.metadata = {
+        "id": data.generate_cache_key(path, max_bins, data.feature_type),
+        "path": str(path),
+        "version": "0.1",
+        "parameters": " ".join(parameters),
+        "software": software,
+        "class": "D4Hist",
+        "kwargs": {
+            "feature": data.feature.metadata["id"],
+            "genome_size": data.genome_size,
+        },
     }
     return data
 
@@ -210,6 +217,7 @@ def preprocess(
     ):
         data = x.result()
         data.genome_size = len(regions["genome"])
+        data.metadata["kwargs"]["genome_size"] = data.genome_size
         d4list.append(data)
 
     logger.info("Computed summary dataframe")
@@ -301,15 +309,15 @@ class DataStore(Viewer):
             self.features.options = self.data.features
             self.features.value = []
         else:
-            logger.warn("No data in cache! Run d4explorer preprocess")
+            logger.warning("No data in cache! Run d4explorer preprocess")
 
     def _setup_data(self):
         """Setup reactive components here"""
         if self.data is None:
             return
         self.dfx = rx(self.data)
-        self.slider.end = self.dfx.max()
-        self.slider.value = (0, self.dfx.max())
+        self.slider.end = self.dfx.rx.value.max()
+        self.slider.value = (0, self.dfx.rx.value.max())
         condition = self.dfx.between(*self.slider.rx())
         self.dfx = self.dfx[condition]
         self.dfx = self.dfx[self.features]
@@ -355,13 +363,9 @@ class DataStore(Viewer):
         if self.dataset.value is None:
             return
         logger.info("Loading data for dataset %s", self.dataset.value)
-        self.data = self.cache.get(self.dataset.value)
+        self.data = D4AnnotatedHist.load(self.dataset.value, self.cache)
         self._setup_data()
         self._setup_fix_data()
-
-    def add_data(self, data):
-        """Add data to the cache."""
-        self.cache.add(value=data)
 
     @pn.depends("dataset")
     def shape(self):
@@ -474,10 +478,6 @@ class DataStoreSummarize(Viewer):
         data = self.cache.get(self.dataset.value)
         self.data = data.load()
         self._setup_data()
-
-    def add_data(self, data):
-        """Add data to the cache."""
-        self.cache.add(data)
 
     @pn.depends("dataset")
     def shape(self):

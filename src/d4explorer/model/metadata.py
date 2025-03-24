@@ -13,23 +13,40 @@ def validate(schema, data):
         raise ValueError(f"Error validating metadata: {e}")
 
 
+# FIXME: setting items in metadata will not throw an error
 @dataclasses.dataclass(kw_only=True)
 class MetadataBaseClass:
     """Base class for class that has metadata"""
 
     metadata_schema: dict = dataclasses.field(default_factory=dict)
     metadata: dict = dataclasses.field(default_factory=dict)
-    _metadata: dict = dataclasses.field(default_factory=dict, repr=False)
+    _metadata: dict = dataclasses.field(
+        default_factory=dict, repr=False, init=False
+    )
+
+    def __post_init__(self):
+        assert isinstance(self._metadata, dict)
 
     @property
     def metadata(self):  # noqa
+        if self._metadata:
+            self.validate(self._metadata)
         return self._metadata
 
     @metadata.setter
     def metadata(self, value):
         self._metadata = value
-        self.validate()
 
-    def validate(self):
+    def validate(self, value):
         """Validate metadata"""
-        validate(self.metadata_schema, self.metadata)
+        validate(self.metadata_schema, value)
+
+    @classmethod
+    def generate_cache_key(cls, *args, **kwargs):
+        """Generate and return cache key"""
+        raise NotImplementedError
+
+    @property
+    def cache_key(self):
+        """Return cache key"""
+        raise NotImplementedError
