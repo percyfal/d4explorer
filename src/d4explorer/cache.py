@@ -1,3 +1,4 @@
+import daiquiri
 import diskcache
 
 CACHEDIR = "cache"
@@ -5,6 +6,8 @@ CACHEDIR = "cache"
 # Main cache instance
 # FIXME: Target for deletion
 cache = diskcache.Cache(CACHEDIR)
+
+logger = daiquiri.getLogger("d4explorer")
 
 
 class D4ExplorerCache:
@@ -31,6 +34,9 @@ class D4ExplorerCache:
         """Add a value to the cache."""
         if key is None:
             key = value.key
+        if key in self.diskcache:
+            logger.info("Key already exists in cache: %s", key)
+            return
         self.diskcache[key] = value
 
     @property
