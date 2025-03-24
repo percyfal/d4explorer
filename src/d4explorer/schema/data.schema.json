@@ -11,7 +11,8 @@
     "version": {"type": "string", "description": "Version of the data object."},
     "parameters": {"type": "string", "description": "Parameters used to generate the data object."},
     "software": {"type": "string", "description": "Software used to generate the data object."},
-    "class": {"type": "string", "description": "Class of the data object."}
+    "class": {"type": "string", "description": "Class of the data object."},
+    "kwargs": {"type": "object", "description": "Additional key-value pairs used to create data object. For example, 'kwargs' can be used to store an additional input data source passed to the software, in which case the key corresponds to an id and the value to the data object used as input."}
   },
   "additionalProperties": false,
   "required": ["id", "path", "version", "parameters", "software", "class"]

@@ -11,8 +11,9 @@
     "parameters": {"type": "string", "description": "Parameters used to generate the data collection."},
     "software": {"type": "string", "description": "Software used to generate the data collection."},
     "class": {"type": "string", "description": "Class of the data collection."},
-    "members": {"type": "array", "items": {"type": "string"}, "description": "List of data IDs that are members of this data collection."}
+    "kwargs": {"type": "object", "description": "Additional keyword arguments used to generate the data collection."},
+    "items": {"type": "array", "items": {"type": "string"}, "description": "List of data IDs that are items of this data collection."}
   },
   "additionalProperties": false,
-  "required": ["id", "version", "parameters", "software", "class", "members"]
+  "required": ["id", "version", "parameters", "software", "class", "items"]
 }
