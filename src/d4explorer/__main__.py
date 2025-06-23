@@ -155,7 +155,11 @@ def cli():
 def preprocess(path, annotation_file, threads, workers, max_bins, cachedir):
     """Preprocess data for the app"""
     d4cache = cache.D4ExplorerCache(cachedir)
-    annotation_file = Path(annotation_file)
+    if len(path) == 0:
+        logger.info("Provide a D4 file for processing")
+        return
+    if annotation_file is not None:
+        annotation_file = Path(annotation_file)
 
     for p in path:
         p = Path(p)
@@ -177,11 +181,11 @@ def preprocess(path, annotation_file, threads, workers, max_bins, cachedir):
         )
         cache_data, metadata = data.to_cache()
         for d, md in cache_data:
-            d4cache.add(value=(d, md), key=md.get("id"))
-        d4cache.add(value=metadata, key=metadata.get("id"))
+            d4cache.add(value=(md, d), key=md.get("id"))
+        d4cache.add(value=(metadata, None), key=metadata.get("id"))
 
 
-@cli.command()
+@cli.command(hidden=True)
 @region_argument()
 @path_argument(nargs=-1)
 @threads_option()
@@ -198,9 +202,7 @@ def preprocess_feature_coverage(path, region, threads, workers, threshold, cache
     """
     d4cache = cache.D4ExplorerCache(cachedir)
 
-    logger.info("WIP: Preprocessing feature coverage data.")
-    logger.info("No functional code in place yet.")
-    path = []
+    logger.info("Preprocessing feature coverage data.")
     plist = []
     cache_keys = []
     for p in path:

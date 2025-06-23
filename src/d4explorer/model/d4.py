@@ -177,7 +177,8 @@ class D4Hist(MetadataBaseClass):
         if cache_data is None:
             logger.warning("D4Hist: cache miss for %s", key)
             return None
-        data, metadata = cache_data
+        metadata, data = cache_data
+        print(metadata)
         assert metadata["class"] == "D4Hist", (
             "incompatible class type {metadata['class']}"
         )
@@ -284,7 +285,7 @@ class D4AnnotatedHist(MetadataBaseClass):
     def load(cls, key: str, cache: D4ExplorerCache):
         """Load from cache"""
         cache_data = cache.get(key)
-        metadata = cache_data
+        metadata, _ = cache_data
         assert metadata["class"] == "D4AnnotatedHist", (
             "incompatible class type {metadata['class']}"
         )

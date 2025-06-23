@@ -46,7 +46,15 @@ You can run the entire linting toolchain with
 
 ## Development with small test data set
 
-FIXME
+The package comes with a small test data set in `tests/data`. To
+preprocess and populate the cache using the `preprocess` command, run
+
+    pixi run d4explorer preprocess tests/data/sum.d4 tests/data/count.d4 \
+        --annotation-file tests/data/annotation.gff.gz
+
+Once the cache has been populated, you can serve the application with
+
+    pixi run d4explorer serve
 
 ## Serving the application in development mode
 

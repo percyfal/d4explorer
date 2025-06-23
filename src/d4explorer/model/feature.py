@@ -99,7 +99,7 @@ class Feature(Bed):
         if cache_data is None:
             logger.warning("Feature: cache miss for %s", key)
             return None
-        data, metadata = cache_data
+        metadata, data = cache_data
         assert metadata["class"] == "Feature", (
             f"incompatible class type {metadata['class']}"
         )
