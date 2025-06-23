@@ -191,10 +191,16 @@ def preprocess(path, annotation_file, threads, workers, max_bins, cachedir):
 @log_level()
 @cachedir_option()
 def preprocess_feature_coverage(path, region, threads, workers, threshold, cachedir):
-    """Preprocess feature coverage data."""
+    """WIP: Preprocess feature coverage data.
+
+    Classify features as present / absent based on an average coverage
+    threshold.
+    """
     d4cache = cache.D4ExplorerCache(cachedir)
 
-    logger.info("Preprocessing feature coverage data")
+    logger.info("WIP: Preprocessing feature coverage data.")
+    logger.info("No functional code in place yet.")
+    path = []
     plist = []
     cache_keys = []
     for p in path:
