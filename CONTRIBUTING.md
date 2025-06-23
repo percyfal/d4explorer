@@ -48,21 +48,21 @@ You can run the entire linting toolchain with
 
 FIXME
 
-## Monitoring resource usage and user behaviour
-
-The `--admin` option will activate the `/admin` panel:
-
-    pixi run python -m d4explorer serve tests/data/test.trees --admin
-
-If the project is served locally on port 5006, the `/admin` endpoint
-would be available at <http://localhost:5006/admin>. See [admin] for
-more information.
-
-[admin]: <https://panel.holoviz.org/how_to/profiling/admin.html>
-
 ## Serving the application in development mode
 
 For interactive development, you can serve the app in development mode
 with `panel serve`:
 
-    pixi run panel serve src/d4explorer --dev --show --args D4FILE
+    pixi run panel serve src/d4explorer --dev --show --args serve
+
+## Monitoring resource usage and user behaviour
+
+The `--admin` option will activate the `/admin` panel:
+
+    pixi run panel serve src/d4explorer --dev --show --admin --args serve
+
+If the project is served locally on port 5006, the `/admin` endpoint
+would be available at <http://localhost:5006/admin>. See [admin] for
+more information.
+
+[admin]: https://panel.holoviz.org/how_to/profiling/admin.html
