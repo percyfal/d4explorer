@@ -15,48 +15,34 @@ Here is a list of important resources for contributors:
 
 ## Development environment
 
-Project and package management is done using [rye]. For a good
-introduction to rye, see the [postmodern python] blog post.
+Project and package management is done using [pixi].
 
-Use rye to add and remove dependencies from `pyproject.toml`.
-Development packages are added by applying the `--dev` flag:
+Use pixi to add and remove dependencies from `pyproject.toml`.
+Development packages are added by applying the `--feature dev` flag:
 
-    rye add package
-    rye add dev-package --dev
-    rye remove package
-    rye remove dev-package --dev
+    pixi add package
+    pixi add --feature dev dev-package
+    pixi remove package
+    pixi remove --feature dev dev-package
 
-After modifying dependencies, make sure to run `rye sync` to update
-the virtual environment.
+To activate a shell, run `pixi shell`.
 
-[rye]: https://rye.astral.sh/
-[postmodern python]: https://rdrn.me/postmodern-python/
+[pixi]: https://pixi.sh/dev/
 
 ## Virtual environment
 
-rye sets up a virtual environment in `.venv`. You should be able to
-activate the environment with `source .venv/bin/activate`. However, if
-you have `pyenv` installed you may run into the issue that nothing
-seems to load. This is a known issue (see [pyenv issue]). You can
-always run programs in the virtual environment with `rye run`, e.g.,
+`pixi` sets up virtual environments in `.pixi`. To activate an
+environment run `pixi shell -e environment`. You can also run programs
+in the virtual environment with `pixi run -e environment`, e.g.,
 
-    rye run pytest -v -s
-
-[pyenv issue]: https://github.com/astral-sh/rye/issues/317
+    pixi run -e dev pytest -v -s
 
 ## Linting and testing workflow
 
-rye provides support for Python code formatting, linting, and more.
-The steps can be run separately
+`pixi` provides support for Python code formatting, linting, and more.
+You can run the entire linting toolchain with
 
-    rye fmt
-    rye lint --fix
-    rye run check
-    rye test
-
-Alternatively, you can run the entire toolchain with
-
-    rye run all
+    pixi run lint
 
 ## Development with small test data set
 
@@ -66,17 +52,17 @@ FIXME
 
 The `--admin` option will activate the `/admin` panel:
 
-    rye run python -m d4explorer tests/data/test.trees --admin
+    pixi run python -m d4explorer serve tests/data/test.trees --admin
 
 If the project is served locally on port 5006, the `/admin` endpoint
-would be available at `http://localhost:5006/admin. See [admin] for
+would be available at <http://localhost:5006/admin>. See [admin] for
 more information.
 
-[admin]: https://panel.holoviz.org/how_to/profiling/admin.html
+[admin]: <https://panel.holoviz.org/how_to/profiling/admin.html>
 
 ## Serving the application in development mode
 
 For interactive development, you can serve the app in development mode
 with `panel serve`:
 
-    rye run panel serve src/d4explorer --dev --show --args D4FILE
+    pixi run panel serve src/d4explorer --dev --show --args D4FILE

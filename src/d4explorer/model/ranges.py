@@ -106,12 +106,7 @@ class Bed(Ranges):
 
     def set_types(self):
         self.data = self.data.astype(
-            {
-                k: v
-                for k, v in zip(
-                    self._columns[: self.bedtype.value], self._types
-                )
-            }
+            {k: v for k, v in zip(self._columns[: self.bedtype.value], self._types)}
         )
 
     @classmethod
@@ -119,13 +114,9 @@ class Bed(Ranges):
         """Guess the bed file type based on the number of columns"""
         ncol = len(data)
         if ncol < 3:
-            raise ValueError(
-                f"Expected at least 3 columns in BED file, got {ncol}"
-            )
+            raise ValueError(f"Expected at least 3 columns in BED file, got {ncol}")
         if ncol > 6:
-            raise ValueError(
-                f"Expected at most 6 columns in BED file, got {ncol}"
-            )
+            raise ValueError(f"Expected at most 6 columns in BED file, got {ncol}")
         return BedType(ncol)
 
     def __setitem__(self, key, value):
@@ -159,9 +150,7 @@ class GFF3(Ranges):
         self.metadata_schema = get_data_schema()
 
     def _read(self):
-        self.data = pd.read_table(
-            self.path, comment="#", header=None, sep="\t"
-        )
+        self.data = pd.read_table(self.path, comment="#", header=None, sep="\t")
 
     def __getitem__(self, key):
         """Return annotation for specific feature type"""

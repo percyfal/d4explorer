@@ -31,9 +31,7 @@ class D4HistogramView(View):
     factors = {"bp": 1, "Kbp": 1e3, "Mbp": 1e6, "Gbp": 1e9}
     min_height = param.Integer(default=400, doc="Minimum height of plot")
     min_width = param.Integer(default=400, doc="Minimum width of plot")
-    plot_type = param.Selector(
-        default="area", objects=["area", "bar"], doc="Plot type"
-    )
+    plot_type = param.Selector(default="area", objects=["area", "bar"], doc="Plot type")
 
     def __init__(self, *, xmin=0, xmax=None, **params):
         super().__init__(**params)
@@ -108,9 +106,7 @@ class D4HistogramView(View):
             dims = dict(kdims=["x"], vdims=["counts"])
             bgplots = []
             plots = []
-            for i, (feature, group) in enumerate(
-                df.groupby("feature", sort=False)
-            ):
+            for i, (feature, group) in enumerate(df.groupby("feature", sort=False)):
                 bgplots.append(
                     hv.Area(group["counts"], label=feature, **dims).opts(
                         hv.opts.Area(fill_alpha=0.1, color=COLORS[i])
@@ -288,9 +284,7 @@ class D4IndicatorView(View):
             df = df[df["mask"]]
 
             fsize = v
-            ssize = np.sum(
-                df[df["feature"] == k].counts[df[df["feature"] == k].x > 0]
-            )
+            ssize = np.sum(df[df["feature"] == k].counts[df[df["feature"] == k].x > 0])
             ssize_frac = np.round(ssize / fsize * 100.0, 2)
             fix_data = self.fulldata.loc[k]
             fsize_tab_list.append(

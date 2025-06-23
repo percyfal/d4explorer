@@ -109,9 +109,7 @@ def d4hist(args):
         feature=regions,
     )
     data.feature.metadata = {
-        "id": data.feature.generate_cache_key(
-            data.feature.path, data.feature.name
-        ),
+        "id": data.feature.generate_cache_key(data.feature.path, data.feature.name),
         "path": str(data.feature.path),
         "version": "0.1",
         "parameters": "",
@@ -212,9 +210,7 @@ def preprocess(
         futures.append(pool.submit(d4hist, args))
 
     d4list = []
-    for x in tqdm(
-        concurrent.futures.as_completed(futures), total=len(futures)
-    ):
+    for x in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
         data = x.result()
         data.genome_size = len(regions["genome"])
         data.metadata["kwargs"]["genome_size"] = data.genome_size
@@ -255,9 +251,7 @@ def preprocess_feature_coverage(
         futures.append(pool.submit(d4explorer_summarize_regions, args))
 
     plist = []
-    for x in tqdm(
-        concurrent.futures.as_completed(futures), total=len(futures)
-    ):
+    for x in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
         data = x.result()
         plist.append(data)
 
@@ -297,9 +291,7 @@ class DataStore(Viewer):
         self.cache = cache.D4ExplorerCache(self.cachedir)
         self.data = None
         self.dataset.options = [
-            x
-            for x in self.cache.keys
-            if x.startswith("d4explorer:D4AnnotatedHist")
+            x for x in self.cache.keys if x.startswith("d4explorer:D4AnnotatedHist")
         ]
         if len(self.dataset.options) > 0:
             self.dataset.value = self.dataset.options[0]
@@ -329,9 +321,7 @@ class DataStore(Viewer):
         logger.info("Sampling fix data-wide estimates...")
         data = []
         for d4h in self.data.data:
-            logger.info(
-                "Sampling 1e6 points feature type %s", d4h.feature_type
-            )
+            logger.info("Sampling 1e6 points feature type %s", d4h.feature_type)
             x = d4h.sample(n=1_000_000)
             mean_coverage = np.round(np.mean(x), 2)
             median_coverage = np.round(np.median(x), 2)
@@ -384,9 +374,7 @@ class DataStore(Viewer):
             self.load_data()
         if self.data is None:
             return pn.pane.Alert("No data in cache", alert_type="warning")
-        indicator = D4IndicatorView(
-            data=self.dfx.rx.value, fulldata=self.fix_data
-        )
+        indicator = D4IndicatorView(data=self.dfx.rx.value, fulldata=self.fix_data)
         hv = D4HistogramView(
             data=self.dfx.rx.value,
             xmin=self.slider.rx.value[0],

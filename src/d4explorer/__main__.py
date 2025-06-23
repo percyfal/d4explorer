@@ -190,9 +190,7 @@ def preprocess(path, annotation_file, threads, workers, max_bins, cachedir):
 @log_filter_option()
 @log_level()
 @cachedir_option()
-def preprocess_feature_coverage(
-    path, region, threads, workers, threshold, cachedir
-):
+def preprocess_feature_coverage(path, region, threads, workers, threshold, cachedir):
     """Preprocess feature coverage data."""
     d4cache = cache.D4ExplorerCache(cachedir)
 
@@ -202,9 +200,7 @@ def preprocess_feature_coverage(
     for p in path:
         p = Path(p)
         logger.info("Preprocessing %s", p)
-        key = d4.D4FeatureCoverage.cache_key(
-            p, Path(region), threshold=threshold
-        )
+        key = d4.D4FeatureCoverage.cache_key(p, Path(region), threshold=threshold)
         cache_keys.append(key)
         if d4cache.has_key(key):
             logger.info("Preprocessing is cached: %s", key)
@@ -237,12 +233,8 @@ def preprocess_feature_coverage(
 @log_filter_option()
 @log_level()
 @cachedir_option()
-@click.option(
-    "--summarize", is_flag=True, default=False, help="Run summarize analysis"
-)
-@click.option(
-    "--servable", is_flag=True, default=False, help="Make app servable"
-)
+@click.option("--summarize", is_flag=True, default=False, help="Run summarize analysis")
+@click.option("--servable", is_flag=True, default=False, help="Make app servable")
 def serve(port, show, threads, servable, cachedir, summarize):
     """Serve the app."""
     app.serve(

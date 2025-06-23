@@ -20,9 +20,7 @@ class MetadataBaseClass:
 
     metadata_schema: dict = dataclasses.field(default_factory=dict)
     metadata: dict = dataclasses.field(default_factory=dict)
-    _metadata: dict = dataclasses.field(
-        default_factory=dict, repr=False, init=False
-    )
+    _metadata: dict = dataclasses.field(default_factory=dict, repr=False, init=False)
 
     def __post_init__(self):
         assert isinstance(self._metadata, dict)
