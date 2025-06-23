@@ -26,7 +26,12 @@ logger = daiquiri.getLogger("d4explorer")
 
 arglist = deque(sys.argv)
 arglist.popleft()
-argfun = arglist.popleft()
+
+try:
+    argfun = arglist.popleft()
+except IndexError:
+    argfun = "serve"
+
 if argfun == "serve":
     arglist.append("--servable")
     fun = serve
