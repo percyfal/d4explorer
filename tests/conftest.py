@@ -67,10 +67,7 @@ def gff_df():
             "phase": ["."] * 4,
             "attributes": [
                 "ID=chr1_G000001;product=5S ribosomal RNA",
-                (
-                    "ID=chr1_G000001.rRNA.1;Parent=chr1_G000001;"
-                    "product=5S ribosomal RNA"
-                ),
+                ("ID=chr1_G000001.rRNA.1;Parent=chr1_G000001;product=5S ribosomal RNA"),
                 "ID=chr2_G000001;product=exon 1",
                 "ID=chr2_G000001.exon.1;Parent=chr2_G000001;product=exon 1",
             ],

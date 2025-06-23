@@ -62,10 +62,7 @@ class D4Hist(MetadataBaseClass):
             self.data.loc[self.ltzero, "x"] = -1
         if self.gtzero.any():
             self.data.loc[self.gtzero, "x"] = (
-                self.data.loc[self.gtzero, "x"]
-                .str.replace(">", "")
-                .astype(int)
-                + 1
+                self.data.loc[self.gtzero, "x"].str.replace(">", "").astype(int) + 1
             )
         self.data = self.data.astype(int)
         if self.mask is None:
@@ -145,9 +142,7 @@ class D4Hist(MetadataBaseClass):
         return None
 
     @classmethod
-    def generate_cache_key(
-        cls, path: Path, max_bins: int, annotation: Path
-    ) -> str:
+    def generate_cache_key(cls, path: Path, max_bins: int, annotation: Path) -> str:
         """Generate a cache key for a given path, max_bins and annotation"""
         if isinstance(path, str):
             path = Path(path)
@@ -161,9 +156,7 @@ class D4Hist(MetadataBaseClass):
 
     @property
     def cache_key(self):
-        return self.generate_cache_key(
-            self.path, self.max_bin, self.feature_type
-        )
+        return self.generate_cache_key(self.path, self.max_bin, self.feature_type)
 
     def to_cache(self) -> tuple:
         """Convert to cacheable object.
@@ -285,10 +278,7 @@ class D4AnnotatedHist(MetadataBaseClass):
         else:
             size = "NA"
             absname = "None"
-        return (
-            f"d4explorer:D4AnnotatedHist:{absname}:{size}"
-            f":{max_bins}:{annotation}"
-        )
+        return f"d4explorer:D4AnnotatedHist:{absname}:{size}:{max_bins}:{annotation}"
 
     @classmethod
     def load(cls, key: str, cache: D4ExplorerCache):
@@ -359,7 +349,5 @@ class D4AnnotatedHist(MetadataBaseClass):
             for y in x.to_cache():
                 data.append(y)
         if self.annotation is not None:
-            data.append(
-                (self.annotation_data.data, self.annotation_data.metadata)
-            )
+            data.append((self.annotation_data.data, self.annotation_data.metadata))
         return data, self.metadata

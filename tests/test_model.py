@@ -49,10 +49,7 @@ def gff_df():
             "phase": ["."] * 4,
             "attributes": [
                 "ID=chr1_G000001;product=5S ribosomal RNA",
-                (
-                    "ID=chr1_G000001.rRNA.1;Parent=chr1_G000001;"
-                    "product=5S ribosomal RNA"
-                ),
+                ("ID=chr1_G000001.rRNA.1;Parent=chr1_G000001;product=5S ribosomal RNA"),
                 "ID=chr2_G000001;product=exon 1",
                 "ID=chr2_G000001.exon.1;Parent=chr2_G000001;product=exon 1",
             ],
@@ -92,9 +89,7 @@ def gff_df_overlap(gff_df):
 
 @pytest.fixture
 def genome():
-    return pd.DataFrame(
-        {"seqid": ["chr1", "chr2"], "start": [0, 0], "end": [110, 120]}
-    )
+    return pd.DataFrame({"seqid": ["chr1", "chr2"], "start": [0, 0], "end": [110, 120]})
 
 
 def test_annotation_path(gff):
@@ -135,9 +130,7 @@ def test_d4hist(hist):
     with pytest.raises(TypeError):
         d4hist.coverage
     d4hist.genome_size = 10
-    np.testing.assert_array_equal(
-        d4hist.coverage, [0.0, 0.0, 0.2, 0.2, 0.0, 0.0]
-    )
+    np.testing.assert_array_equal(d4hist.coverage, [0.0, 0.0, 0.2, 0.2, 0.0, 0.0])
     sample = d4hist.sample(n=5, random_seed=42)
     np.testing.assert_array_equal(sample, [1, 2, 1, 1, 0])
     pd.testing.assert_frame_equal(d4hist.original, orig)
@@ -164,9 +157,7 @@ def test_d4hist_feature(hist, genome):
     with pytest.raises(TypeError):
         d4hist.coverage
     d4hist.genome_size = 10
-    np.testing.assert_array_equal(
-        d4hist.coverage, [0.0, 0.0, 0.2, 0.2, 0.0, 0.0]
-    )
+    np.testing.assert_array_equal(d4hist.coverage, [0.0, 0.0, 0.2, 0.2, 0.0, 0.0])
     sample = d4hist.sample(n=5, random_seed=42)
     np.testing.assert_array_equal(sample, [1, 2, 1, 1, 0])
     pd.testing.assert_frame_equal(d4hist.original, orig)
@@ -223,9 +214,7 @@ def test_d4hist_cache(hist, genome):
         "class": "D4Hist",
         "kwargs": {"feature": d4hist.feature.metadata["id"]},
     }
-    assert (
-        d4hist.metadata["kwargs"]["feature"] == d4hist.feature.metadata["id"]
-    )
+    assert d4hist.metadata["kwargs"]["feature"] == d4hist.feature.metadata["id"]
 
 
 class IParam(Viewer):

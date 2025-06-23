@@ -56,9 +56,7 @@ class DataStore(Viewer):
     def shape(self):
         if self.data is None:
             return pn.Column("### Shape", "No data loaded")
-        return pn.Column(
-            "### Shape", self.data.data.data.shape, self.dataset.value
-        )
+        return pn.Column("### Shape", self.data.data.data.shape, self.dataset.value)
 
     @pn.depends("dataset", "load_data_button.value")
     def __panel__(self):

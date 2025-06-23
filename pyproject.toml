@@ -1,26 +1,31 @@
 [project]
 name = "d4explorer"
 description = "Visual exploration of d4 coverage files"
-authors = [
-    { name = "Per Unneberg", email = "per.unneberg@scilifelab.se" }
-]
+authors = [{ name = "Per Unneberg", email = "per.unneberg@scilifelab.se" }]
 dependencies = [
-    "panel~=1.6.1",
-    "hvplot~=0.11.0",
-    "holoviews~=1.20.0",
-    "daiquiri~=3.2.5.1",
-    "diskcache~=5.6.3",
-    "pyd4~=0.3.9",
-    "click~=8.1.7",
-    "scipy~=1.14.1",
-    "watchfiles~=1.0.4",
-    "humanize~=4.11.0",
-    "param~=2.2.0",
-    "pyranges~=0.1.2",
+  "panel~=1.6.1",
+  "hvplot~=0.11.0",
+  "holoviews~=1.20.0",
+  "daiquiri~=3.2.5.1",
+  "diskcache~=5.6.3",
+  "pyd4~=0.3.9",
+  "click~=8.1.7",
+  "scipy~=1.14.1",
+  "watchfiles~=1.0.4",
+  "humanize~=4.11.0",
+  "param~=2.2.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.11"
 dynamic = ["version"]
+
+[dependency-groups]
+dev = [
+  "jupyter-console~=6.6.3",
+  "notebook~=7.2.2",
+  "pytest~=8.3.4",
+  "pyright~=1.1.384",
+]
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
@@ -38,23 +43,31 @@ version-file = "src/d4explorer/_version.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/d4explorer"]
 
-[tool.rye]
-managed = true
-dev-dependencies = [
-    "jupyter-console~=6.6.3",
-    "notebook~=7.2.2",
-    "pytest~=8.3.4",
-    "pyright~=1.1.384",
-]
-
 [project.scripts]
 "d4explorer" = "d4explorer:__main__.cli"
 d4explorer-d4filter = "d4explorer.tools.d4filter:cli"
 d4explorer-summarize = "d4explorer.tools.summarize:cli"
 
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --ignore src/d4explorer/main.py"
+
+[tool.pyright]
+venvPath = "."                     # rye installs the venv in the current dir
+venv = ".venv"                     #       in a folder called `.venv`
+include = ["src"]
+pythonVersion = "3.11"             # if library, specify the _lowest_ you support
+reportMissingTypeStubs = false
+reportAttributeAccessIssue = false
+reportCallIssue = false
+reportOptionalMemberAccess = false
+reportAssignmentType = false
+
 [tool.ruff]
 target-version = "py312"
-line-length = 79
+line-length = 88
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 select = [
@@ -65,29 +78,45 @@ select = [
   "N",    # naming
   "T100", # breakpoints (probably don't want these in prod!)
 ]
+ignore = ["N806"]
 
 [tool.ruff.lint.isort]
 # so it knows to group first-party stuff last
 known-first-party = ["d4explorer"]
 
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
 
-[tool.pyright]
-venvPath = "."          # rye installs the venv in the current dir
-venv = ".venv"          #       in a folder called `.venv`
-include = ["src"]
-pythonVersion = "3.11"  # if library, specify the _lowest_ you support
-reportMissingTypeStubs = false
-reportAttributeAccessIssue = false
-reportCallIssue = false
-reportOptionalMemberAccess = false
-reportAssignmentType = false
+[tool.pixi.pypi-dependencies]
+d4explorer = { path = ".", editable = true }
 
-[tool.rye.scripts]
-fmt = "rye fmt"
-lint = "rye lint --fix"
-check = "pyright"
-test = "rye test"
-all = { chain = ["fmt", "lint", "test"] }
+[tool.pixi.tasks]
 
-[tool.pytest.ini_options]
-addopts = "--doctest-modules --ignore src/d4explorer/main.py"
+[tool.pixi.environments]
+default = { solve-group = "default" }
+dev = { features = ["dev"], solve-group = "default" }
+lint = { features = ["lint"], solve-group = "default" }
+
+[tool.pixi.feature.lint.tasks]
+actionlint = { cmd = "actionlint", env = { SHELLCHECK_OPTS = "-e SC2086" } }
+lint = { cmd = "pre-commit run --all-files --hook-stage=manual", description = "Run all linters and formatters on all code" }
+pre-commit-install = "pre-commit install --install-hooks -t=pre-commit -t=pre-push"
+pre-commit-install-minimal = "pre-commit install -t=pre-commit"
+pre-commit-run = "pre-commit run --all-files"
+ruff-format = "ruff format --force-exclude"
+ruff-lint = "ruff check --fix --exit-non-zero-on-fix --force-exclude"
+shell-format = "shfmt --write --indent=4 --simplify --binary-next-line"
+toml-format = { cmd = "taplo fmt", env = { RUST_LOG = "warn" } }
+toml-lint = "taplo lint --verbose **/pyproject.toml"
+typecheck-python = "mypy"
+typos = "typos --write-changes --force-exclude"
+
+[tool.pixi.feature.lint.dependencies]
+pre-commit = "*"
+pre-commit-hooks = "*"
+ruff = "*"
+typos = "*"
+actionlint = "*"
+go-shfmt = "*"
+taplo = "*"

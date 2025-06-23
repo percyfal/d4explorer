@@ -22,8 +22,7 @@ def validate_bytes(data: bytes | None) -> None:
     """Validate that data is bytes."""
     if data is not None and not isinstance(data, bytes):
         raise TypeError(
-            "If no encoding is set metadata should be bytes"
-            f", found {type(data)}"
+            f"If no encoding is set metadata should be bytes, found {type(data)}"
         )
 
 
@@ -49,12 +48,8 @@ class Schema:
             except jsonschema.exceptions.SchemaError as ve:
                 logger.error(ve)
                 raise
-            self._string = json.dumps(
-                schema, sort_keys=True, separators=(",", ":")
-            )
-            self._validate_row = D4ExplorerMetadataSchemaValidator(
-                schema
-            ).validate
+            self._string = json.dumps(schema, sort_keys=True, separators=(",", ":"))
+            self._validate_row = D4ExplorerMetadataSchemaValidator(schema).validate
             if "type" in schema and "null" in schema["type"]:
                 self.empty_value = None
             else:
