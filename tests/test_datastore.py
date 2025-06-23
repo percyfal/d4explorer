@@ -82,8 +82,8 @@ def test_datastore_cache(datastore, sum_data):
     keys = datastore.cache.keys
     cache_data, metadata = sum_data.to_cache()
     for d, md in cache_data:
-        datastore.cache.add(value=(d, md), key=md.get("id"))
-    datastore.cache.add(value=metadata, key=metadata.get("id"))
+        datastore.cache.add(value=(md, d), key=md.get("id"))
+    datastore.cache.add(value=(metadata, None), key=metadata.get("id"))
     keys = datastore.cache.keys
     d4ah = D4AnnotatedHist.load(keys[0], datastore.cache)
     assert isinstance(d4ah, D4AnnotatedHist)

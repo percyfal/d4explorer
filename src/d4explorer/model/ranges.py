@@ -180,7 +180,7 @@ class GFF3(Ranges):
         if cache_data is None:
             logger.warning("GFF3: cache miss for %s", key)
             return None
-        data, metadata = cache_data
+        metadata, data = cache_data
         assert metadata["class"] == "GFF3", (
             f"incompatible class type {metadata['class']}"
         )

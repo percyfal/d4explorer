@@ -30,10 +30,18 @@ class D4ExplorerCache:
             return None
         return self.diskcache.get(key)
 
-    def add(self, *, value, key: str = None):
-        """Add a value to the cache."""
+    def add(self, *, value: tuple, key: str = None):
+        """Add a value to the cache.
+
+        The value is a tuple (metadata, data) where data can be None.
+        """
+        assert isinstance(value, tuple), "cache data must be tuple"
+        assert isinstance(value[0], dict), (
+            "first item in cache data tuple must be a metadata dictionary"
+        )
+        md = value[0]
         if key is None:
-            key = value.key
+            key = md.key
         if key in self.diskcache:
             logger.info("Key already exists in cache: %s", key)
             return
