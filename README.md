@@ -36,4 +36,6 @@ histograms are sampled to produce coverage plots over features. By
 modifying the coverage range and monitoring the feature size
 indicators you can decide on appropriate thresholds for your data.
 
+![](img/d4explorer-coverage.img)
+
 [d4]: https://github.com/38/d4-format
