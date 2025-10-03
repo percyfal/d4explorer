@@ -67,17 +67,25 @@ def cli():
     type=click.File("w"),
 )
 @log_level()
-def group(path, regions, threshold, output_file):
-    """Summarize coverage data over regions.
+def count_by_region(path, regions, threshold, output_file):
+    """Count the number of accessible bases in predefined regions.
 
-    The input D4 file should consist of five columns (strand is
-    excluded). Requires bedtools to run.
+    Count the number of bases in predefined regions that have coverage
+    above a given threshold. All intervals are summed and grouped by
+    the region.
+
+    Parameters:
+        path (Path): Path to D4 file with columns seqid, begin, end and score.
+        regions (Path): Path to BED file with regions. The BED file should consist
+                        of four columns seqid, begin, end and name.
+        threshold (int): Coverage threshold for calling a base as present.
+        output_file (File): Output file in BED5 format.
     """
     row = namedtuple("row", ["seqid", "begin", "end", "name", "score"])
 
     def summarize_region(cov, ranges):
-        bed = Bed(pd.DataFrame(cov))
-        ft = Bed(pd.DataFrame(ranges))
+        bed = Bed(data=pd.DataFrame(cov))
+        ft = Bed(data=pd.DataFrame(ranges))
         scores = []
         for name, group in bed.data.groupby("name"):
             presabs = (group["score"] > threshold).astype(np.int8)
@@ -88,7 +96,7 @@ def group(path, regions, threshold, output_file):
         ft.data.to_csv(output_file, sep="\t", header=None, index=None)
 
     logger.info("Summarizing coverage data")
-    features = Bed(regions)
+    features = Bed(data=regions)
     last = None
     first = True
     cov = []
