@@ -1,20 +1,25 @@
+import multiprocessing  # noqa
+from pathlib import Path  # noqa
 from typing import Callable
 
 import click
 import daiquiri
+import pandas as pd  # noqa
+import panel as pn  # noqa
 from click.decorators import FC
 
-daiquiri.setup(level="WARN")  # noqa
-import panel as pn  # noqa
-import pandas as pd  # noqa
-from pathlib import Path  # noqa
-import multiprocessing  # noqa
-
-from . import app  # noqa
-from . import __version__  # noqa
-from d4explorer import datastore  # noqa
-from d4explorer import cache  # noqa
+from d4explorer import (
+    cache,  # noqa
+    datastore,  # noqa
+)
+from d4explorer.cli import log_level  # noqa
+from d4explorer.d4utils import commands as d4utils_cmd  # noqa
 from d4explorer.model import d4  # noqa
+
+from . import (
+    __version__,  # noqa
+    app,  # noqa
+)
 
 logger = daiquiri.getLogger("d4explorer")
 
@@ -27,33 +32,6 @@ def log_filter_option(expose_value: bool = False) -> Callable[[FC], FC]:
         is_flag=True,
         expose_value=expose_value,
         help="Do not filter the output log (advanced debugging only)",
-    )
-
-
-def log_level(expose_value: bool = False) -> Callable[[FC], FC]:
-    """Setup logging"""
-
-    def callback(ctx, param, value):
-        no_log_filter = ctx.params.get("no_log_filter")
-        if no_log_filter:
-            logger = daiquiri.getLogger("root")
-            logger.setLevel(value)
-        else:
-            loggers = ["d4explorer", "cache", "bokeh", "tornado"]
-            for logname in loggers:
-                logger = daiquiri.getLogger(logname)
-                logger.setLevel(value)
-            logger = daiquiri.getLogger("bokeh.server.protocol_handler")
-            logger.setLevel("CRITICAL")
-        return
-
-    return click.option(
-        "--log-level",
-        default="INFO",
-        help="Logging level",
-        callback=callback,
-        expose_value=expose_value,
-        is_eager=False,
     )
 
 
@@ -150,7 +128,7 @@ def cli():
 @workers_option()
 @max_bins_option()
 @log_filter_option()
-@log_level()
+@log_level(logger)
 @cachedir_option()
 def preprocess(path, annotation_file, threads, workers, max_bins, cachedir):
     """Preprocess data for the app"""
@@ -192,7 +170,7 @@ def preprocess(path, annotation_file, threads, workers, max_bins, cachedir):
 @workers_option()
 @threshold_option()
 @log_filter_option()
-@log_level()
+@log_level(logger)
 @cachedir_option()
 def preprocess_feature_coverage(path, region, threads, workers, threshold, cachedir):
     """WIP: Preprocess feature coverage data.
@@ -239,7 +217,7 @@ def preprocess_feature_coverage(path, region, threads, workers, threshold, cache
 @show_option()
 @threads_option()
 @log_filter_option()
-@log_level()
+@log_level(logger)
 @cachedir_option()
 @click.option("--summarize", is_flag=True, default=False, help="Run summarize analysis")
 @click.option("--servable", is_flag=True, default=False, help="Make app servable")
@@ -254,6 +232,10 @@ def serve(port, show, threads, servable, cachedir, summarize):
         verbose=False,
         summarize=summarize,
     )
+
+
+# Commands defined in
+cli.add_command(d4utils_cmd.sum)
 
 
 if __name__ == "__main__":

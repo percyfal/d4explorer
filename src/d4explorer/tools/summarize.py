@@ -9,6 +9,7 @@ import daiquiri
 import numpy as np
 import pandas as pd
 
+from d4explorer.cli import log_level
 from d4explorer.model.ranges import Bed
 
 from .. import __version__
@@ -16,35 +17,6 @@ from .. import __version__
 daiquiri.setup(level="WARN")  # noqa
 
 logger = daiquiri.getLogger("d4explorer-summarize")
-
-
-def log_level(expose_value=False):
-    """Setup logging level.
-
-    Parameters:
-        expose_value (bool): Whether to expose the value to the command function.
-    """
-
-    def callback(ctx, param, value):
-        no_log_filter = ctx.params.get("no_log_filter")
-        if no_log_filter:
-            logger = daiquiri.getLogger("root")
-            logger.setLevel(value)
-        else:
-            loggers = ["d4explorer-summarize"]
-            for logname in loggers:
-                logger = daiquiri.getLogger(logname)
-                logger.setLevel(value)
-        return
-
-    return click.option(
-        "--log-level",
-        default="INFO",
-        help="Logging level",
-        callback=callback,
-        expose_value=expose_value,
-        is_eager=False,
-    )
 
 
 @click.group(help=__doc__, name="d4explorer-summarize")
