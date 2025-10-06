@@ -96,17 +96,24 @@ cmd = "panel serve src/d4explorer --dev --show --args serve --port {{port}}"
 args = [{ "arg" = "port", default = "5508" }]
 cmd = "panel serve src/d4explorer --dev --admin --show --port {{port}} --args sandbox tests/data/sum.d4 --annotation-file tests/data/annotation.gff.gz"
 
+[tool.pixi.tasks.quartodoc]
+cmd = "pixi r -e quartodoc quartodoc build --config docs/_quarto.yml"
+
+[tool.pixi.tasks.preview]
+depends-on = [{ task = "quartodoc" }]
+cmd = "quarto preview"
+
 [tool.pixi.environments]
 default = { solve-group = "default" }
 dev = { features = ["dev"], solve-group = "default" }
 lint = { features = ["lint"], solve-group = "default" }
+quartodoc = ["quartodoc"]
 
 [tool.pixi.feature.dev.tasks]
 test = { cmd = "pytest -v -s tests" }
 
 [tool.pixi.feature.dev.dependencies]
 jupyterlab = ">=4.4.3,<5"
-
 
 [tool.pixi.feature.lint.tasks]
 actionlint = { cmd = "actionlint", env = { SHELLCHECK_OPTS = "-e SC2086" } }
@@ -130,6 +137,10 @@ typos = "*"
 actionlint = "*"
 go-shfmt = "*"
 taplo = "*"
+pylint = ">=3.3.8,<4"
+
+[tool.pixi.feature.quartodoc.dependencies]
+quartodoc = "*"
 
 [tool.pixi.dependencies]
 jsonschema = ">=4.24.0,<5"

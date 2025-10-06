@@ -13,7 +13,11 @@ logger = daiquiri.getLogger("d4explorer-d4filter")
 
 
 def log_level(expose_value=False):
-    """Setup logging"""
+    """Setup logging level.
+
+    Parameters:
+        expose_value (bool): Whether to expose the value to the command function.
+    """
 
     def callback(ctx, param, value):
         no_log_filter = ctx.params.get("no_log_filter")

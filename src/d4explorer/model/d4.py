@@ -178,7 +178,6 @@ class D4Hist(MetadataBaseClass):
             logger.warning("D4Hist: cache miss for %s", key)
             return None
         metadata, data = cache_data
-        print(metadata)
         assert metadata["class"] == "D4Hist", (
             "incompatible class type {metadata['class']}"
         )
