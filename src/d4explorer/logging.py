@@ -91,7 +91,7 @@ default_filter = DefaultFilter(
         "root",  # "Dropping a patch" could be handled here
     ]
 )
-handler = ColorizedTextHandler(formatter=formatter, filter=default_filter)
+handler = ColorizedTextHandler(formatter=formatter, filt=default_filter)
 
 
 def log_level(expose_value=False):

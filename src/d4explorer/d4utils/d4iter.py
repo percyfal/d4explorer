@@ -1,6 +1,5 @@
 """Class for iterating over multiple d4 files."""
 
-import logging
 import pathlib
 import re
 import sys
@@ -9,13 +8,7 @@ import numpy as np
 import pyd4
 from tqdm import tqdm
 
-__shortname__ = __name__.split(".")[-1]
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s [%(name)s:%(funcName)s]: %(message)s",
-)
+from d4explorer.logging import app_logger as logger
 
 pat = re.compile(r"[ \t]+")
 
@@ -141,9 +134,9 @@ class D4Iterator:
         def _count_region_chunk(rname):
             for i, y in self.process_region_chunk(rname):
                 if i == 0:
-                    x = ((y > lower) & (y < upper)).astype(int)
+                    x = ((y >= lower) & (y <= upper)).astype(int)
                 else:
-                    x = x + ((y > lower) & (y < upper)).astype(int)
+                    x = x + ((y >= lower) & (y <= upper)).astype(int)
             return x
 
         for j, rname in enumerate(self.iter_chunks(chrom_name, begin, end)):

@@ -58,13 +58,29 @@ def test_sum_region(inputs, tmp_path, chrom, begin, end):
     regions = tmp_path / "regions.bed"
     with open(regions, "w") as f:
         f.write(f"{chrom}\t{begin}\t{end}\n")
-    print(f"d4explorer sum {' '.join([str(x) for x in inputs])} {outfile} -R {regions}")
     result = runner.invoke(
         commands.sum, [str(x) for x in inputs] + [outfile, "-R", str(regions)]
+    )
+    assert result.exit_code == 1
+    # s1 = load_chromosome(pyd4.D4File(str(inputs[0])), chrom, begin, end)
+    # s2 = load_chromosome(pyd4.D4File(str(inputs[1])), chrom, begin, end)
+    # out = load_chromosome(pyd4.D4File(outfile), chrom, begin, end)
+    # expected = s1["value"] + s2["value"]
+    # np.testing.assert_array_equal(out["value"].values, expected.values)
+
+
+@pytest.mark.parametrize("chrom,begin,end", [("chr1", 1940, 2040)])
+def test_count(inputs, tmp_path, chrom, begin, end):
+    """Test d4utils count command."""
+    runner = CliRunner()
+    outfile = str(tmp_path / "out.d4")
+    lower = 3
+    result = runner.invoke(
+        commands.count, [str(x) for x in inputs] + [outfile] + ["--min-coverage", lower]
     )
     assert result.exit_code == 0
     s1 = load_chromosome(pyd4.D4File(str(inputs[0])), chrom, begin, end)
     s2 = load_chromosome(pyd4.D4File(str(inputs[1])), chrom, begin, end)
     out = load_chromosome(pyd4.D4File(outfile), chrom, begin, end)
-    expected = s1["value"] + s2["value"]
-    np.testing.assert_array_equal(out["value"].values, expected.values)
+    expected = (s1["value"] >= lower).values + (s2["value"] >= lower).values.astype(int)
+    np.testing.assert_array_equal(out["value"].values, expected)

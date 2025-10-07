@@ -5,18 +5,14 @@ import sys
 from collections import namedtuple
 
 import click
-import daiquiri
 import numpy as np
 import pandas as pd
 
-from d4explorer.cli import log_level
+from d4explorer.logging import cli_logger as logger
+from d4explorer.logging import log_level
 from d4explorer.model.ranges import Bed
 
 from .. import __version__
-
-daiquiri.setup(level="WARN")  # noqa
-
-logger = daiquiri.getLogger("d4explorer-summarize")
 
 
 @click.group(help=__doc__, name="d4explorer-summarize")

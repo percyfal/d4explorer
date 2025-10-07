@@ -1,17 +1,13 @@
 import sys
 
 import click
-import daiquiri
 import numpy as np
 import pandas as pd
 from pyd4 import D4File
 from tqdm import tqdm
 
-from d4explorer.cli import log_level
-
-daiquiri.setup(level="WARN")  # noqa
-
-logger = daiquiri.getLogger("d4explorer-d4filter")
+from d4explorer.logging import cli_logger as logger
+from d4explorer.logging import log_level
 
 
 @click.command()
