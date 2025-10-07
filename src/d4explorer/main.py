@@ -16,13 +16,11 @@ information.
 from d4explorer import app  # noqa
 from d4explorer import datastore  # noqa
 from d4explorer import scratch  # noqa
-import daiquiri
+
 import sys
 from collections import deque
 from d4explorer.__main__ import serve, preprocess
-
-daiquiri.setup(level="INFO")  # noqa
-logger = daiquiri.getLogger("d4explorer")
+from d4explorer.logging import app_logger as logger
 
 arglist = deque(sys.argv)
 arglist.popleft()

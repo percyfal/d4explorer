@@ -4,15 +4,13 @@ from enum import Enum
 from pathlib import Path
 from tempfile import mkdtemp
 
-import daiquiri
 import numpy as np
 import pandas as pd
 
+from d4explorer.logging import app_logger as logger
 from d4explorer.metadata import get_data_schema
 
 from .metadata import MetadataBaseClass
-
-logger = daiquiri.getLogger("d4explorer")
 
 
 class BedType(Enum):

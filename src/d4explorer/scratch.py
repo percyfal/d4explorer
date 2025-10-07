@@ -1,15 +1,11 @@
-import daiquiri
 import panel as pn
 import param
 from panel.viewable import Viewer
 
 from d4explorer import config
 from d4explorer.cache import CACHEDIR, D4ExplorerCache
+from d4explorer.logging import app_logger as logger
 
-daiquiri.setup(level="WARN")  # noqa
-
-
-logger = daiquiri.getLogger("d4explorer")
 pn.extension(sizing_mode="stretch_width")
 
 

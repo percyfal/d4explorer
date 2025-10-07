@@ -211,7 +211,7 @@ class D4Hist:
         if n > total_size:
             logger.warning(
                 (
-                    "Sample size (n=%i) is larger the data set (n=%i); "
+                    "Sample size (n=%i) is larger than the data set (n=%i); "
                     "resampling values for feature %s"
                 ),
                 int(n),

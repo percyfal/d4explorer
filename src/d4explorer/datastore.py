@@ -3,7 +3,6 @@ import subprocess as sp
 from pathlib import Path
 from threading import BoundedSemaphore
 
-import daiquiri
 import numpy as np
 import pandas as pd
 import panel as pn
@@ -14,6 +13,7 @@ from pyd4 import D4File
 from tqdm import tqdm
 
 from d4explorer import cache, config
+from d4explorer.logging import app_logger as logger
 from d4explorer.model.coverage import D4FeatureCoverage
 from d4explorer.model.d4 import D4AnnotatedHist, D4Hist
 from d4explorer.model.feature import Feature
@@ -24,8 +24,6 @@ from d4explorer.views.d4 import (
     D4IndicatorView,
     D4ViolinPlotView,
 )
-
-logger = daiquiri.getLogger("d4explorer")
 
 CARD_STYLE = """
 :host {{

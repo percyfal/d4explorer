@@ -3,7 +3,6 @@ from pathlib import Path  # noqa
 from typing import Callable
 
 import click
-import daiquiri
 import pandas as pd  # noqa
 import panel as pn  # noqa
 from click.decorators import FC
@@ -12,20 +11,19 @@ from d4explorer import (
     cache,  # noqa
     datastore,  # noqa
 )
-from d4explorer.cli import log_level  # noqa
+from d4explorer.logging import log_level  # noqa
 from d4explorer.d4utils import commands as d4utils_cmd  # noqa
 from d4explorer.model import d4  # noqa
+from d4explorer.logging import app_logger as logger  # noqa
 
 from . import (
     __version__,  # noqa
     app,  # noqa
 )
 
-logger = daiquiri.getLogger("d4explorer")
-
 
 def log_filter_option(expose_value: bool = False) -> Callable[[FC], FC]:
-    """Setup logging filter"""
+    """Disable logging filters"""
     return click.option(
         "--no-log-filter",
         default=False,
@@ -128,7 +126,7 @@ def cli():
 @workers_option()
 @max_bins_option()
 @log_filter_option()
-@log_level(logger)
+@log_level()
 @cachedir_option()
 def preprocess(path, annotation_file, threads, workers, max_bins, cachedir):
     """Preprocess data for the app"""
@@ -170,7 +168,7 @@ def preprocess(path, annotation_file, threads, workers, max_bins, cachedir):
 @workers_option()
 @threshold_option()
 @log_filter_option()
-@log_level(logger)
+@log_level()
 @cachedir_option()
 def preprocess_feature_coverage(path, region, threads, workers, threshold, cachedir):
     """WIP: Preprocess feature coverage data.
@@ -217,7 +215,7 @@ def preprocess_feature_coverage(path, region, threads, workers, threshold, cache
 @show_option()
 @threads_option()
 @log_filter_option()
-@log_level(logger)
+@log_level()
 @cachedir_option()
 @click.option("--summarize", is_flag=True, default=False, help="Run summarize analysis")
 @click.option("--servable", is_flag=True, default=False, help="Make app servable")

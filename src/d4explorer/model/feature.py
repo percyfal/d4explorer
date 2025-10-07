@@ -2,15 +2,13 @@ import dataclasses
 import os
 from pathlib import Path
 
-import daiquiri
 import pandas as pd
 
 from d4explorer.cache import D4ExplorerCache
+from d4explorer.logging import app_logger as logger
 from d4explorer.metadata import get_data_schema
 
 from .ranges import GFF3, Bed
-
-logger = daiquiri.getLogger("d4explorer")
 
 
 def convert_to_si_suffix(number):

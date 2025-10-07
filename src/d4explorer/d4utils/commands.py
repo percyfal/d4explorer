@@ -1,14 +1,12 @@
 """Sum the first track from multiple d4 files over a chromosome region"""
 
 import click
-import daiquiri
 import pandas as pd
 
-from d4explorer.cli import log_level
+from d4explorer.logging import app_logger as logger
+from d4explorer.logging import log_level
 
 from .d4iter import D4Iterator, check_outfile
-
-logger = daiquiri.getLogger("d4explorer-sum")
 
 
 @click.command(
@@ -18,7 +16,7 @@ logger = daiquiri.getLogger("d4explorer-sum")
 @click.argument("outfile", type=click.Path(exists=False))
 @click.option("--chunk-size", help="region chunk size", default=1000000, type=int)
 @click.option("--regions", "-R", help="region bed file")
-@log_level(logger)
+@log_level()
 def sum(  # noqa: A001
     path,
     outfile,

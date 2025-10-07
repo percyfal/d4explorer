@@ -5,18 +5,16 @@ import os
 from enum import Enum
 from pathlib import Path
 
-import daiquiri
 import numpy as np
 import pandas as pd
 
 from d4explorer.cache import D4ExplorerCache
+from d4explorer.logging import app_logger as logger
 from d4explorer.metadata import get_data_schema, get_datacollection_schema
 
 from .feature import Feature
 from .metadata import MetadataBaseClass
 from .ranges import GFF3
-
-logger = daiquiri.getLogger("d4explorer")
 
 
 class DataTypes(Enum):
@@ -107,7 +105,7 @@ class D4Hist(MetadataBaseClass):
             if self.feature:
                 logger.warning(
                     (
-                        "Sample size (n=%i) is larger the data set (n=%i); "
+                        "Sample size (n=%i) is larger than the data set (n=%i); "
                         "resampling values for feature %s"
                     ),
                     int(n),
@@ -117,7 +115,7 @@ class D4Hist(MetadataBaseClass):
             else:
                 logger.warning(
                     (
-                        "Sample size (n=%i) is larger the data set (n=%i); "
+                        "Sample size (n=%i) is larger than the data set (n=%i); "
                         "resampling values"
                     ),
                     int(n),

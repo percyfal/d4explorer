@@ -2,12 +2,9 @@ import dataclasses
 import os
 from pathlib import Path
 
-import daiquiri
 import pandas as pd
 
 from .feature import Feature
-
-logger = daiquiri.getLogger("d4explorer")
 
 
 @dataclasses.dataclass
