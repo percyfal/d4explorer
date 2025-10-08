@@ -42,7 +42,7 @@ jobs:
         with:
           pixi-version: v0.56.0
           cache: true
-          environments: quarto
+          environments: quartodoc
 
       - run: echo "QUARTO_PYTHON=${GITHUB_WORKSPACE}/.pixi/envs/quarto/bin/python" >> $GITHUB_ENV
 
