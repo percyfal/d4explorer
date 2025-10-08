@@ -1,3 +1,5 @@
+"""Custom logging setup with colorized output and filtering."""
+
 import logging
 import sys
 from typing import List, Optional
@@ -88,7 +90,7 @@ default_filter = DefaultFilter(
         "requests",
         "tornado",
         "root.apply_json_patch",
-        "root",  # "Dropping a patch" could be handled here
+        "root",
     ]
 )
 handler = ColorizedTextHandler(formatter=formatter, filt=default_filter)

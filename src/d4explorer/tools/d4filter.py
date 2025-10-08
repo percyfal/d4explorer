@@ -1,3 +1,5 @@
+"""Filter d4 file on value range and output in BED format."""
+
 import sys
 
 import click
@@ -25,7 +27,13 @@ from d4explorer.logging import log_level
 @log_level()
 def cli(path, min_value, max_value):
     """Command line interface for d4filter. Prints filtered results in
-    BED5 format to stdout."""
+    BED5 format to stdout.
+
+    Parameters:
+        path (str): Input D4 file.
+        min_value (int): Minimum value (inclusive).
+        max_value (int): Maximum value (inclusive).
+    """
     logger.info("Running d4filter")
     d4 = D4File(path)
     dflist = []

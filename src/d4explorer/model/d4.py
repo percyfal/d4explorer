@@ -1,4 +1,4 @@
-"""d4explorer data module."""
+"""d4explorer D4 data types module."""
 
 import dataclasses
 import os

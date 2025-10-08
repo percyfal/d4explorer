@@ -52,6 +52,8 @@ class D4Iterator:
     """Iterate over multiple d4 paths"""
 
     def __init__(self, path, chunk_size=10000, regions=None, concat=False):
+        if isinstance(path, str):
+            path = [path]
         self._fh = [pyd4.D4File(x) for x in tqdm(path)]
         self._index = len(self._fh)
         self._chunk_size = chunk_size
@@ -144,4 +146,30 @@ class D4Iterator:
                 y = _count_region_chunk(rname)
             else:
                 y = np.append(y, _count_region_chunk(rname))
+        return y
+
+    def filter(self, chrom_name, begin, end, *, lower=0, upper=np.inf):
+        """Filter positions outside value range in first track.
+
+        Parameters:
+            chrom_name (str): Chromosome name
+            begin (int): begin position
+            end (int): end position
+            lower (int): lower threshold
+            upper (int): upper threshold
+        """
+
+        def _process_region_chunk(rname):
+            for i, y in self.process_region_chunk(rname):
+                if i == 0:
+                    x = ((y >= lower) & (y <= upper)).astype(int)
+                else:
+                    x = x + ((y >= lower) & (y <= upper)).astype(int)
+            return x
+
+        for j, rname in enumerate(self.iter_chunks(chrom_name, begin, end)):
+            if j == 0:
+                y = _process_region_chunk(rname)
+            else:
+                y = np.append(y, _process_region_chunk(rname))
         return y

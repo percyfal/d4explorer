@@ -1,3 +1,5 @@
+"""Data classes for storing coverage information for a feature."""
+
 import dataclasses
 import os
 from pathlib import Path

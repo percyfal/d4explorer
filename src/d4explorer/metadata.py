@@ -1,3 +1,5 @@
+"""Module for handling JSONSchema metadata validation."""
+
 from __future__ import annotations
 
 import copy

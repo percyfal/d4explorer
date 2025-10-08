@@ -1,4 +1,8 @@
-"""Summarize coverage data."""
+"""Summarize coverage data from D4 files.
+
+Contains method to count the number of accessible bases in predefined
+regions.
+"""
 
 import subprocess as sp
 import sys

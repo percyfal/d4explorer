@@ -235,6 +235,7 @@ def serve(port, show, threads, servable, cachedir, summarize):
 # Commands defined in
 cli.add_command(d4utils_cmd.sum)
 cli.add_command(d4utils_cmd.count)
+cli.add_command(d4utils_cmd.filter)
 
 
 if __name__ == "__main__":

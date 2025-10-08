@@ -3,6 +3,19 @@ project:
   render:
     - index.qmd
     - reference/index.qmd
+    - reference/app.qmd
+    - reference/cache.qmd
+    - reference/config.qmd
+    - reference/logging.qmd
+    - reference/main.qmd
+    - reference/metadata.qmd
+    - reference/d4utils.commands.qmd
+    - reference/d4utils.d4iter.qmd
+    - reference/model.coverage.qmd
+    - reference/model.d4.qmd
+    - reference/model.feature.qmd
+    - reference/model.metadata.qmd
+    - reference/model.ranges.qmd
     - reference/tools.d4filter.qmd
     - reference/tools.summarize.qmd
   pre-render:
@@ -38,5 +51,18 @@ quartodoc:
     - title: Tools
       desc: d4explorer tools
       contents:
+        - app
+        - cache
+        - config
+        - logging
+        - main
+        - metadata
+        - d4utils.commands
+        - d4utils.d4iter
+        - model.coverage
+        - model.d4
+        - model.feature
+        - model.metadata
+        - model.ranges
         - tools.d4filter
         - tools.summarize

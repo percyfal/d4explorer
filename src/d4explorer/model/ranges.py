@@ -1,3 +1,5 @@
+"""Ranges related classes"""
+
 import dataclasses
 import os
 from enum import Enum

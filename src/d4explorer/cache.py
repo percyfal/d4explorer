@@ -1,3 +1,5 @@
+"""Cache management for d4explorer."""
+
 import diskcache
 
 from d4explorer.logging import app_logger as logger

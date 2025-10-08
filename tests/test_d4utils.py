@@ -84,3 +84,20 @@ def test_count(inputs, tmp_path, chrom, begin, end):
     out = load_chromosome(pyd4.D4File(outfile), chrom, begin, end)
     expected = (s1["value"] >= lower).values + (s2["value"] >= lower).values.astype(int)
     np.testing.assert_array_equal(out["value"].values, expected)
+
+
+@pytest.mark.parametrize("chrom,begin,end", [("chr1", 1940, 2040)])
+def test_filter(sum_d4, tmp_path, chrom, begin, end):
+    """Test d4utils filter command."""
+    runner = CliRunner()
+    outfile = str(tmp_path / "out.bed")
+    lower = 5
+    upper = 17
+    result = runner.invoke(
+        commands.filter,
+        [str(sum_d4)] + [outfile] + ["--lower", lower] + ["--upper", upper],
+    )
+    assert result.exit_code == 0
+    out = pd.read_table(outfile, names=["chrom", "begin", "end", "name", "value"])
+    df = out[(out["chrom"] == chrom) & (out["begin"] >= begin) & (out["end"] <= end)]
+    assert df.shape[0] == 74

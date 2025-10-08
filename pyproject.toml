@@ -95,18 +95,25 @@ cmd = "panel serve src/d4explorer --dev --show --args serve --port {{port}}"
 args = [{ "arg" = "port", default = "5508" }]
 cmd = "panel serve src/d4explorer --dev --admin --show --port {{port}} --args sandbox tests/data/sum.d4 --annotation-file tests/data/annotation.gff.gz"
 
-[tool.pixi.tasks.quartodoc]
-cmd = "pixi r -e quartodoc quartodoc build --config docs/_quarto.yml"
+[tool.pixi.feature.quartodoc.tasks.quartodoc]
+cmd = "quartodoc build"
+cwd = "docs"
 
-[tool.pixi.tasks.preview]
+[tool.pixi.feature.quartodoc.tasks.preview]
 depends-on = [{ task = "quartodoc" }]
 cmd = "quarto preview"
+cwd = "docs"
+
+[tool.pixi.feature.quartodoc.tasks.render]
+depends-on = [{ task = "quartodoc" }]
+cmd = "quarto render"
+cwd = "docs"
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
 dev = { features = ["dev"], solve-group = "default" }
 lint = { features = ["lint"], solve-group = "default" }
-quartodoc = ["quartodoc"]
+quartodoc = { features = ["quartodoc"], solve-group = "default" }
 
 [tool.pixi.feature.dev.tasks]
 test = { cmd = "pytest -v -s tests" }
@@ -142,6 +149,7 @@ pylint = ">=3.3.8,<4"
 
 [tool.pixi.feature.quartodoc.dependencies]
 quartodoc = "*"
+quarto = ">=1.8.25,<2"
 
 [tool.pixi.dependencies]
 jsonschema = ">=4.24.0,<5"

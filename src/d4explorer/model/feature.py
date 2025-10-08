@@ -1,3 +1,5 @@
+"""Feature class for genomic features in BED or GFF3 format."""
+
 import dataclasses
 import os
 from pathlib import Path
