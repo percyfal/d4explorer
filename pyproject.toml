@@ -112,7 +112,6 @@ cwd = "docs"
 [tool.pixi.feature.quartodoc.tasks.publish]
 depends-on = [{ task = "quartodoc" }]
 cmd = "quarto publish gh-pages docs --no-browser"
-cwd = "docs"
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
