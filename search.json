@@ -1,0 +1,404 @@
+[
+  {
+    "objectID": "reference/tools.summarize.html",
+    "href": "reference/tools.summarize.html",
+    "title": "tools.summarize",
+    "section": "",
+    "text": "tools.summarize\nSummarize coverage data from D4 files.\nContains method to count the number of accessible bases in predefined regions.\n\n\n\n\n\nName\nDescription\n\n\n\n\ncli\nSummarize coverage data.\n\n\ncount_by_region\nCount the number of accessible bases in predefined regions.\n\n\n\n\n\ntools.summarize.cli()\nSummarize coverage data.\n\n\n\ntools.summarize.count_by_region(path, regions, threshold, output_file)\nCount the number of accessible bases in predefined regions.\nCount the number of bases in predefined regions that have coverage above a given threshold. All intervals are summed and grouped by the region.\n\n\n\n\n\n\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\npath\nPath\nPath to D4 file with columns seqid, begin, end and score.\nrequired\n\n\nregions\nPath\nPath to BED file with regions. The BED file should consist of four columns seqid, begin, end and name.\nrequired\n\n\nthreshold\nint\nCoverage threshold for calling a base as present.\nrequired\n\n\noutput_file\nFile\nOutput file in BED5 format.\nrequired",
+    "crumbs": [
+      "Tools",
+      "tools.summarize"
+    ]
+  },
+  {
+    "objectID": "reference/tools.summarize.html#functions",
+    "href": "reference/tools.summarize.html#functions",
+    "title": "tools.summarize",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\ncli\nSummarize coverage data.\n\n\ncount_by_region\nCount the number of accessible bases in predefined regions.\n\n\n\n\n\ntools.summarize.cli()\nSummarize coverage data.\n\n\n\ntools.summarize.count_by_region(path, regions, threshold, output_file)\nCount the number of accessible bases in predefined regions.\nCount the number of bases in predefined regions that have coverage above a given threshold. All intervals are summed and grouped by the region.\n\n\n\n\n\n\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\npath\nPath\nPath to D4 file with columns seqid, begin, end and score.\nrequired\n\n\nregions\nPath\nPath to BED file with regions. The BED file should consist of four columns seqid, begin, end and name.\nrequired\n\n\nthreshold\nint\nCoverage threshold for calling a base as present.\nrequired\n\n\noutput_file\nFile\nOutput file in BED5 format.\nrequired",
+    "crumbs": [
+      "Tools",
+      "tools.summarize"
+    ]
+  },
+  {
+    "objectID": "reference/model.ranges.html",
+    "href": "reference/model.ranges.html",
+    "title": "model.ranges",
+    "section": "",
+    "text": "model.ranges\nRanges related classes\n\n\n\n\n\nName\nDescription\n\n\n\n\nBed\nBed object\n\n\nGFF3\nGFF3 dataclass.\n\n\nRanges\nRanges object\n\n\n\n\n\nmodel.ranges.Bed(\n    metadata_schema=dict(),\n    data,\n    name=None,\n    bedtype=None,\n    path=None,\n)\nBed object\n\n\n\n\n\nName\nDescription\n\n\n\n\nguess_bed_file_type\nGuess the bed file type based on the number of columns\n\n\n\n\n\nmodel.ranges.Bed.guess_bed_file_type(data)\nGuess the bed file type based on the number of columns\n\n\n\n\n\nmodel.ranges.GFF3(metadata_schema=dict(), data, name=None, path=None)\nGFF3 dataclass.\n\n\n\nmodel.ranges.Ranges(metadata_schema=dict(), data, name=None)\nRanges object",
+    "crumbs": [
+      "Tools",
+      "model.ranges"
+    ]
+  },
+  {
+    "objectID": "reference/model.ranges.html#classes",
+    "href": "reference/model.ranges.html#classes",
+    "title": "model.ranges",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nBed\nBed object\n\n\nGFF3\nGFF3 dataclass.\n\n\nRanges\nRanges object\n\n\n\n\n\nmodel.ranges.Bed(\n    metadata_schema=dict(),\n    data,\n    name=None,\n    bedtype=None,\n    path=None,\n)\nBed object\n\n\n\n\n\nName\nDescription\n\n\n\n\nguess_bed_file_type\nGuess the bed file type based on the number of columns\n\n\n\n\n\nmodel.ranges.Bed.guess_bed_file_type(data)\nGuess the bed file type based on the number of columns\n\n\n\n\n\nmodel.ranges.GFF3(metadata_schema=dict(), data, name=None, path=None)\nGFF3 dataclass.\n\n\n\nmodel.ranges.Ranges(metadata_schema=dict(), data, name=None)\nRanges object",
+    "crumbs": [
+      "Tools",
+      "model.ranges"
+    ]
+  },
+  {
+    "objectID": "reference/model.feature.html",
+    "href": "reference/model.feature.html",
+    "title": "model.feature",
+    "section": "",
+    "text": "model.feature\nFeature class for genomic features in BED or GFF3 format.\n\n\n\n\n\nName\nDescription\n\n\n\n\nFeature\nBED4 representation of a feature\n\n\n\n\n\nmodel.feature.Feature(\n    data,\n    path=None,\n    *,\n    metadata_schema=dict(),\n    name=None,\n    bedtype=None,\n)\nBED4 representation of a feature\n\n\n\n\n\n\n\nName\nDescription\n\n\n\n\nconvert_to_si_suffix\nConvert a number to a string with an SI suffix.\n\n\n\n\n\nmodel.feature.convert_to_si_suffix(number)\nConvert a number to a string with an SI suffix.",
+    "crumbs": [
+      "Tools",
+      "model.feature"
+    ]
+  },
+  {
+    "objectID": "reference/model.feature.html#classes",
+    "href": "reference/model.feature.html#classes",
+    "title": "model.feature",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nFeature\nBED4 representation of a feature\n\n\n\n\n\nmodel.feature.Feature(\n    data,\n    path=None,\n    *,\n    metadata_schema=dict(),\n    name=None,\n    bedtype=None,\n)\nBED4 representation of a feature",
+    "crumbs": [
+      "Tools",
+      "model.feature"
+    ]
+  },
+  {
+    "objectID": "reference/model.feature.html#functions",
+    "href": "reference/model.feature.html#functions",
+    "title": "model.feature",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nconvert_to_si_suffix\nConvert a number to a string with an SI suffix.\n\n\n\n\n\nmodel.feature.convert_to_si_suffix(number)\nConvert a number to a string with an SI suffix.",
+    "crumbs": [
+      "Tools",
+      "model.feature"
+    ]
+  },
+  {
+    "objectID": "reference/model.coverage.html",
+    "href": "reference/model.coverage.html",
+    "title": "model.coverage",
+    "section": "",
+    "text": "model.coverage\nmodel.coverage\nData classes for storing coverage information for a feature.",
+    "crumbs": [
+      "Tools",
+      "model.coverage"
+    ]
+  },
+  {
+    "objectID": "reference/d4utils.commands.html",
+    "href": "reference/d4utils.commands.html",
+    "title": "d4utils.commands",
+    "section": "",
+    "text": "d4utils.commands\n\n\n\n\n\nName\nDescription\n\n\n\n\ncount\nCount coverage in input that falls within a specified range.\n\n\nfilter\nFilter d4 file on value range and output in BED format.\n\n\nsum\nSum first track from multiple d4 files to a single-track file.\n\n\n\n\n\nd4utils.commands.count(\n    path,\n    outfile,\n    chunk_size,\n    min_coverage,\n    max_coverage,\n    regions,\n)\nCount coverage in input that falls within a specified range.\nThe input files are summarized by counting the number of positions where the coverage lies within the specified range.\nExample:\nd4explorer count input1.d4input2.d4 output.d4 --min-coverage 5 --max-coverage 20\n\n\n\n\n\n\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\npath\nlist\nList of input D4 files.\nrequired\n\n\noutfile\nstr\nOutput D4 file.\nrequired\n\n\nchunk_size\nint\nRegion chunk size.\nrequired\n\n\nmin_coverage\nint\nMinimum coverage to count (inclusive).\nrequired\n\n\nmax_coverage\nint\nMaximum coverage to count (inclusive)\nrequired\n\n\nregions\nstr\nOptional region bed file to limit the summarization.\nrequired\n\n\n\n\n\n\n\nd4utils.commands.filter(path, outfile, chunk_size, lower, upper, regions)\nFilter d4 file on value range and output in BED format.\nExample:\nd4explorer filter input.d4 output.d4 --lower 5 --upper 20\n\n\n\n\n\n\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\npath\nstr\nInput D4 file.\nrequired\n\n\noutfile\nstr\nOutput BED file.\nrequired\n\n\nchunk_size\nint\nRegion chunk size.\nrequired\n\n\nlower\nint\nLower bound (inclusive).\nrequired\n\n\nupper\nint\nUpper bound (inclusive).\nrequired\n\n\nregions\nstr\nOptional region bed file to limit the filtering.\nrequired\n\n\n\n\n\n\n\nd4utils.commands.sum(path, outfile, chunk_size, regions)\nSum first track from multiple d4 files to a single-track file.\nThe input files are summarized by summing the values at each position. The output file is created in the same format as the input files.\nExample:\nd4explorer sum input1.d4 input2.d4 output.d4\n\n\n\n\n\n\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\npath\nlist\nList of input D4 files.\nrequired\n\n\noutfile\nstr\nOutput D4 file.\nrequired\n\n\nchunk_size\nint\nRegion chunk size.\nrequired\n\n\nregions\nstr\nOptional region bed file to limit the summarization.\nrequired",
+    "crumbs": [
+      "Tools",
+      "d4utils.commands"
+    ]
+  },
+  {
+    "objectID": "reference/d4utils.commands.html#functions",
+    "href": "reference/d4utils.commands.html#functions",
+    "title": "d4utils.commands",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\ncount\nCount coverage in input that falls within a specified range.\n\n\nfilter\nFilter d4 file on value range and output in BED format.\n\n\nsum\nSum first track from multiple d4 files to a single-track file.\n\n\n\n\n\nd4utils.commands.count(\n    path,\n    outfile,\n    chunk_size,\n    min_coverage,\n    max_coverage,\n    regions,\n)\nCount coverage in input that falls within a specified range.\nThe input files are summarized by counting the number of positions where the coverage lies within the specified range.\nExample:\nd4explorer count input1.d4input2.d4 output.d4 --min-coverage 5 --max-coverage 20\n\n\n\n\n\n\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\npath\nlist\nList of input D4 files.\nrequired\n\n\noutfile\nstr\nOutput D4 file.\nrequired\n\n\nchunk_size\nint\nRegion chunk size.\nrequired\n\n\nmin_coverage\nint\nMinimum coverage to count (inclusive).\nrequired\n\n\nmax_coverage\nint\nMaximum coverage to count (inclusive)\nrequired\n\n\nregions\nstr\nOptional region bed file to limit the summarization.\nrequired\n\n\n\n\n\n\n\nd4utils.commands.filter(path, outfile, chunk_size, lower, upper, regions)\nFilter d4 file on value range and output in BED format.\nExample:\nd4explorer filter input.d4 output.d4 --lower 5 --upper 20\n\n\n\n\n\n\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\npath\nstr\nInput D4 file.\nrequired\n\n\noutfile\nstr\nOutput BED file.\nrequired\n\n\nchunk_size\nint\nRegion chunk size.\nrequired\n\n\nlower\nint\nLower bound (inclusive).\nrequired\n\n\nupper\nint\nUpper bound (inclusive).\nrequired\n\n\nregions\nstr\nOptional region bed file to limit the filtering.\nrequired\n\n\n\n\n\n\n\nd4utils.commands.sum(path, outfile, chunk_size, regions)\nSum first track from multiple d4 files to a single-track file.\nThe input files are summarized by summing the values at each position. The output file is created in the same format as the input files.\nExample:\nd4explorer sum input1.d4 input2.d4 output.d4\n\n\n\n\n\n\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\npath\nlist\nList of input D4 files.\nrequired\n\n\noutfile\nstr\nOutput D4 file.\nrequired\n\n\nchunk_size\nint\nRegion chunk size.\nrequired\n\n\nregions\nstr\nOptional region bed file to limit the summarization.\nrequired",
+    "crumbs": [
+      "Tools",
+      "d4utils.commands"
+    ]
+  },
+  {
+    "objectID": "reference/main.html",
+    "href": "reference/main.html",
+    "title": "main",
+    "section": "",
+    "text": "main\nmain\nHelper module for serving the d4explorer app from the command line using panel serve.\nThis module is used to serve the d4explorer app from the command line using panel serve. One use case is for development purposes where the –dev argument enables automated reloading of the app when the source code changes. To launch the app from the command line run:\n$ panel serve –dev –admin –show –args path/to/sum.d4 –annotation-file path/to/annotation.gff3\nSee https://panel.holoviz.org/how_to/server/commandline.html for more information.",
+    "crumbs": [
+      "Tools",
+      "main"
+    ]
+  },
+  {
+    "objectID": "reference/config.html",
+    "href": "reference/config.html",
+    "title": "config",
+    "section": "",
+    "text": "config\nconfig\nConfiguration settings.\nThis file stores configurations for the entire application such as figure dimensions and color schemes.",
+    "crumbs": [
+      "Tools",
+      "config"
+    ]
+  },
+  {
+    "objectID": "reference/app.html",
+    "href": "reference/app.html",
+    "title": "app",
+    "section": "",
+    "text": "app\nMain application for d4explorer.\nProvides the App class that is the main application for d4explorer. The App subclasses the Viewer class from panel and renders a panel.FastListTemplate.\n\n\n\n\n\nName\nDescription\n\n\n\n\nserve\nServe the app\n\n\n\n\n\napp.serve(servable, summarize=False, **kw)\nServe the app",
+    "crumbs": [
+      "Tools",
+      "app"
+    ]
+  },
+  {
+    "objectID": "reference/app.html#functions",
+    "href": "reference/app.html#functions",
+    "title": "app",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nserve\nServe the app\n\n\n\n\n\napp.serve(servable, summarize=False, **kw)\nServe the app",
+    "crumbs": [
+      "Tools",
+      "app"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "d4explorer documentation",
+    "section": "",
+    "text": "Screenshot of d4explorer coverage page",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "index.html#about",
+    "href": "index.html#about",
+    "title": "d4explorer documentation",
+    "section": "About",
+    "text": "About\nd4explorer is a simple interactive application to plot coverage data in d4 format. The main purpose is to provide a tool for selecting coverage thresholds that define accessible sites in a non-model organism resequencing project for which it may be difficult to generate all sites VCF output.",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "index.html#quickstart",
+    "href": "index.html#quickstart",
+    "title": "d4explorer documentation",
+    "section": "Quickstart",
+    "text": "Quickstart\nInstall d4explorer from github:\npython -m pip install \"d4explorer @ git+https://github.com/percyfal/d4explorer\"\nThen you need to run the preprocesscommand to process one or multiple d4 files.\nd4explorer preprocess file1.d4 file2.d4 ...\nThis will run d4 hist behind the scenes to generate a d4 histogram file which subsequently will be stored in the d4explorer cache (by default directory cache).\nAdding an annotation file to the preprocessing step will furthermore stratify results along regions:\nd4explorer preprocess --annotation-file annotation.gff file1.d4 file2.d4 ...\nOnce the cache is populated, you can serve the app:\nd4explorer serve\nThis will launch the d4explorer app at http://localhost:5006. The web page will display a list of datasets, and once loaded, the histograms are sampled to produce coverage plots over features. By modifying the coverage range and monitoring the feature size indicators you can decide on appropriate thresholds for your data.",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "reference/index.html",
+    "href": "reference/index.html",
+    "title": "Function reference",
+    "section": "",
+    "text": "d4explorer tools\n\n\n\napp\nMain application for d4explorer.\n\n\ncache\nCache management for d4explorer.\n\n\nconfig\nConfiguration settings.\n\n\nlogging\nCustom logging setup with colorized output and filtering.\n\n\nmain\nHelper module for serving the d4explorer app from the command line\n\n\nmetadata\nModule for handling JSONSchema metadata validation.\n\n\nd4utils.commands\n\n\n\nd4utils.d4iter\nClass for iterating over multiple d4 files.\n\n\nmodel.coverage\nData classes for storing coverage information for a feature.\n\n\nmodel.d4\nd4explorer D4 data types module.\n\n\nmodel.feature\nFeature class for genomic features in BED or GFF3 format.\n\n\nmodel.metadata\nMetadata base class and validation functions.\n\n\nmodel.ranges\nRanges related classes\n\n\ntools.d4filter\nFilter d4 file on value range and output in BED format.\n\n\ntools.summarize\nSummarize coverage data from D4 files.",
+    "crumbs": [
+      "Function reference"
+    ]
+  },
+  {
+    "objectID": "reference/index.html#tools",
+    "href": "reference/index.html#tools",
+    "title": "Function reference",
+    "section": "",
+    "text": "d4explorer tools\n\n\n\napp\nMain application for d4explorer.\n\n\ncache\nCache management for d4explorer.\n\n\nconfig\nConfiguration settings.\n\n\nlogging\nCustom logging setup with colorized output and filtering.\n\n\nmain\nHelper module for serving the d4explorer app from the command line\n\n\nmetadata\nModule for handling JSONSchema metadata validation.\n\n\nd4utils.commands\n\n\n\nd4utils.d4iter\nClass for iterating over multiple d4 files.\n\n\nmodel.coverage\nData classes for storing coverage information for a feature.\n\n\nmodel.d4\nd4explorer D4 data types module.\n\n\nmodel.feature\nFeature class for genomic features in BED or GFF3 format.\n\n\nmodel.metadata\nMetadata base class and validation functions.\n\n\nmodel.ranges\nRanges related classes\n\n\ntools.d4filter\nFilter d4 file on value range and output in BED format.\n\n\ntools.summarize\nSummarize coverage data from D4 files.",
+    "crumbs": [
+      "Function reference"
+    ]
+  },
+  {
+    "objectID": "reference/cache.html",
+    "href": "reference/cache.html",
+    "title": "cache",
+    "section": "",
+    "text": "cache\nCache management for d4explorer.\n\n\n\n\n\nName\nDescription\n\n\n\n\nD4ExplorerCache\nMain cache interface class for d4explorer.\n\n\n\n\n\ncache.D4ExplorerCache(cachedir=CACHEDIR)\nMain cache interface class for d4explorer.\n\n\n\n\n\nName\nDescription\n\n\n\n\nadd\nAdd a value to the cache.\n\n\nget\nGet a value from the cache.\n\n\nhas_key\nCheck if a key exists in the cache.\n\n\n\n\n\ncache.D4ExplorerCache.add(value, key=None)\nAdd a value to the cache.\nThe value is a tuple (metadata, data) where data can be None.\n\n\n\ncache.D4ExplorerCache.get(key)\nGet a value from the cache.\n\n\n\ncache.D4ExplorerCache.has_key(key)\nCheck if a key exists in the cache.",
+    "crumbs": [
+      "Tools",
+      "cache"
+    ]
+  },
+  {
+    "objectID": "reference/cache.html#classes",
+    "href": "reference/cache.html#classes",
+    "title": "cache",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nD4ExplorerCache\nMain cache interface class for d4explorer.\n\n\n\n\n\ncache.D4ExplorerCache(cachedir=CACHEDIR)\nMain cache interface class for d4explorer.\n\n\n\n\n\nName\nDescription\n\n\n\n\nadd\nAdd a value to the cache.\n\n\nget\nGet a value from the cache.\n\n\nhas_key\nCheck if a key exists in the cache.\n\n\n\n\n\ncache.D4ExplorerCache.add(value, key=None)\nAdd a value to the cache.\nThe value is a tuple (metadata, data) where data can be None.\n\n\n\ncache.D4ExplorerCache.get(key)\nGet a value from the cache.\n\n\n\ncache.D4ExplorerCache.has_key(key)\nCheck if a key exists in the cache.",
+    "crumbs": [
+      "Tools",
+      "cache"
+    ]
+  },
+  {
+    "objectID": "reference/logging.html",
+    "href": "reference/logging.html",
+    "title": "logging",
+    "section": "",
+    "text": "logging\nCustom logging setup with colorized output and filtering.\n\n\n\n\n\nName\nDescription\n\n\n\n\nColorizedTextHandler\nCustom colorized logging handler.\n\n\n\n\n\nlogging.ColorizedTextHandler(\n    nocolor=False,\n    stream=sys.stderr,\n    formatter=None,\n    filt=None,\n)\nCustom colorized logging handler.\n\n\n\n\n\nName\nDescription\n\n\n\n\ndecorate\nAdd color to the log message\n\n\nemit\nEmit a message with custom formatting and color.\n\n\n\n\n\nlogging.ColorizedTextHandler.decorate(record, message)\nAdd color to the log message\n\n\n\nlogging.ColorizedTextHandler.emit(record)\nEmit a message with custom formatting and color.\n\n\n\n\n\n\n\n\n\nName\nDescription\n\n\n\n\nlog_level\nSetup logging level.\n\n\n\n\n\nlogging.log_level(expose_value=False)\nSetup logging level.\n\n\n\n\n\n\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nexpose_value\nbool\nWhether to expose the value to the command function.\nFalse",
+    "crumbs": [
+      "Tools",
+      "logging"
+    ]
+  },
+  {
+    "objectID": "reference/logging.html#classes",
+    "href": "reference/logging.html#classes",
+    "title": "logging",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nColorizedTextHandler\nCustom colorized logging handler.\n\n\n\n\n\nlogging.ColorizedTextHandler(\n    nocolor=False,\n    stream=sys.stderr,\n    formatter=None,\n    filt=None,\n)\nCustom colorized logging handler.\n\n\n\n\n\nName\nDescription\n\n\n\n\ndecorate\nAdd color to the log message\n\n\nemit\nEmit a message with custom formatting and color.\n\n\n\n\n\nlogging.ColorizedTextHandler.decorate(record, message)\nAdd color to the log message\n\n\n\nlogging.ColorizedTextHandler.emit(record)\nEmit a message with custom formatting and color.",
+    "crumbs": [
+      "Tools",
+      "logging"
+    ]
+  },
+  {
+    "objectID": "reference/logging.html#functions",
+    "href": "reference/logging.html#functions",
+    "title": "logging",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nlog_level\nSetup logging level.\n\n\n\n\n\nlogging.log_level(expose_value=False)\nSetup logging level.\n\n\n\n\n\n\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nexpose_value\nbool\nWhether to expose the value to the command function.\nFalse",
+    "crumbs": [
+      "Tools",
+      "logging"
+    ]
+  },
+  {
+    "objectID": "reference/metadata.html",
+    "href": "reference/metadata.html",
+    "title": "metadata",
+    "section": "",
+    "text": "metadata\nModule for handling JSONSchema metadata validation.\n\n\n\n\n\nName\nDescription\n\n\n\n\nSchema\nClass for storing configuration schema.\n\n\n\n\n\nmetadata.Schema(schema)\nClass for storing configuration schema.\nNB: The parser cannot resolve references meaning only the properties sections will be populated.\n:param dict schema: A dict containing a JSONSchema object.\n\n\n\n\n\nName\nDescription\n\n\n\n\nschema\nReturn a copy of the schema.\n\n\n\n\n\n\n\n\n\nName\nDescription\n\n\n\n\nasdict\nReturn the schema as a dictionary.\n\n\nvalidate\nValidate a configuration row (dict) against this schema.\n\n\n\n\n\nmetadata.Schema.asdict()\nReturn the schema as a dictionary.\n\n\n\nmetadata.Schema.validate(row)\nValidate a configuration row (dict) against this schema.\n\n\n\n\n\n\n\n\n\nName\nDescription\n\n\n\n\nvalidate_bytes\nValidate that data is bytes.\n\n\n\n\n\nmetadata.validate_bytes(data)\nValidate that data is bytes.",
+    "crumbs": [
+      "Tools",
+      "metadata"
+    ]
+  },
+  {
+    "objectID": "reference/metadata.html#classes",
+    "href": "reference/metadata.html#classes",
+    "title": "metadata",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nSchema\nClass for storing configuration schema.\n\n\n\n\n\nmetadata.Schema(schema)\nClass for storing configuration schema.\nNB: The parser cannot resolve references meaning only the properties sections will be populated.\n:param dict schema: A dict containing a JSONSchema object.\n\n\n\n\n\nName\nDescription\n\n\n\n\nschema\nReturn a copy of the schema.\n\n\n\n\n\n\n\n\n\nName\nDescription\n\n\n\n\nasdict\nReturn the schema as a dictionary.\n\n\nvalidate\nValidate a configuration row (dict) against this schema.\n\n\n\n\n\nmetadata.Schema.asdict()\nReturn the schema as a dictionary.\n\n\n\nmetadata.Schema.validate(row)\nValidate a configuration row (dict) against this schema.",
+    "crumbs": [
+      "Tools",
+      "metadata"
+    ]
+  },
+  {
+    "objectID": "reference/metadata.html#functions",
+    "href": "reference/metadata.html#functions",
+    "title": "metadata",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nvalidate_bytes\nValidate that data is bytes.\n\n\n\n\n\nmetadata.validate_bytes(data)\nValidate that data is bytes.",
+    "crumbs": [
+      "Tools",
+      "metadata"
+    ]
+  },
+  {
+    "objectID": "reference/d4utils.d4iter.html",
+    "href": "reference/d4utils.d4iter.html",
+    "title": "d4utils.d4iter",
+    "section": "",
+    "text": "d4utils.d4iter\nClass for iterating over multiple d4 files.\n\n\n\n\n\nName\nDescription\n\n\n\n\nD4Iterator\nIterate over multiple d4 paths\n\n\n\n\n\nd4utils.d4iter.D4Iterator(path, chunk_size=10000, regions=None, concat=False)\nIterate over multiple d4 paths\n\n\n\n\n\nName\nDescription\n\n\n\n\ncount\nCount tracks whose values lie in a given range over a given\n\n\nfilter\nFilter positions outside value range in first track.\n\n\nsum\nSum tracks over a chromosome region\n\n\n\n\n\nd4utils.d4iter.D4Iterator.count(\n    chrom_name,\n    begin,\n    end,\n    *,\n    lower=0,\n    upper=np.inf,\n)\nCount tracks whose values lie in a given range over a given region\n\n\n\nd4utils.d4iter.D4Iterator.filter(\n    chrom_name,\n    begin,\n    end,\n    *,\n    lower=0,\n    upper=np.inf,\n)\nFilter positions outside value range in first track.\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nchrom_name\nstr\nChromosome name\nrequired\n\n\nbegin\nint\nbegin position\nrequired\n\n\nend\nint\nend position\nrequired\n\n\nlower\nint\nlower threshold\n0\n\n\nupper\nint\nupper threshold\nnp.inf\n\n\n\n\n\n\n\nd4utils.d4iter.D4Iterator.sum(chrom_name, begin, end)\nSum tracks over a chromosome region\n\n\n\n\n\n\n\n\n\nName\nDescription\n\n\n\n\nto_str\nConvert array of arrays to string\n\n\n\n\n\nd4utils.d4iter.to_str(array)\nConvert array of arrays to string",
+    "crumbs": [
+      "Tools",
+      "d4utils.d4iter"
+    ]
+  },
+  {
+    "objectID": "reference/d4utils.d4iter.html#classes",
+    "href": "reference/d4utils.d4iter.html#classes",
+    "title": "d4utils.d4iter",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nD4Iterator\nIterate over multiple d4 paths\n\n\n\n\n\nd4utils.d4iter.D4Iterator(path, chunk_size=10000, regions=None, concat=False)\nIterate over multiple d4 paths\n\n\n\n\n\nName\nDescription\n\n\n\n\ncount\nCount tracks whose values lie in a given range over a given\n\n\nfilter\nFilter positions outside value range in first track.\n\n\nsum\nSum tracks over a chromosome region\n\n\n\n\n\nd4utils.d4iter.D4Iterator.count(\n    chrom_name,\n    begin,\n    end,\n    *,\n    lower=0,\n    upper=np.inf,\n)\nCount tracks whose values lie in a given range over a given region\n\n\n\nd4utils.d4iter.D4Iterator.filter(\n    chrom_name,\n    begin,\n    end,\n    *,\n    lower=0,\n    upper=np.inf,\n)\nFilter positions outside value range in first track.\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\nchrom_name\nstr\nChromosome name\nrequired\n\n\nbegin\nint\nbegin position\nrequired\n\n\nend\nint\nend position\nrequired\n\n\nlower\nint\nlower threshold\n0\n\n\nupper\nint\nupper threshold\nnp.inf\n\n\n\n\n\n\n\nd4utils.d4iter.D4Iterator.sum(chrom_name, begin, end)\nSum tracks over a chromosome region",
+    "crumbs": [
+      "Tools",
+      "d4utils.d4iter"
+    ]
+  },
+  {
+    "objectID": "reference/d4utils.d4iter.html#functions",
+    "href": "reference/d4utils.d4iter.html#functions",
+    "title": "d4utils.d4iter",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nto_str\nConvert array of arrays to string\n\n\n\n\n\nd4utils.d4iter.to_str(array)\nConvert array of arrays to string",
+    "crumbs": [
+      "Tools",
+      "d4utils.d4iter"
+    ]
+  },
+  {
+    "objectID": "reference/model.d4.html",
+    "href": "reference/model.d4.html",
+    "title": "model.d4",
+    "section": "",
+    "text": "model.d4\nd4explorer D4 data types module.\n\n\n\n\n\nName\nDescription\n\n\n\n\nD4Hist\nClass that stores D4Hist data.\n\n\nDataTypes\nEnum for getter method data types.\n\n\n\n\n\nmodel.d4.D4Hist(\n    metadata_schema=dict(),\n    data,\n    feature=None,\n    path=None,\n    mask=None,\n    genome_size=None,\n)\nClass that stores D4Hist data.\nThis class is used to store data generated by d4tools stat. The optional feature parameter is used to store the feature that was used as input to d4tools stat.\n\n\n\n\n\nName\nDescription\n\n\n\n\ngenerate_cache_key\nGenerate a cache key for a given path, max_bins and annotation\n\n\nload\nLoad from cache\n\n\nto_cache\nConvert to cacheable object.\n\n\n\n\n\nmodel.d4.D4Hist.generate_cache_key(path, max_bins, annotation)\nGenerate a cache key for a given path, max_bins and annotation\n\n\n\nmodel.d4.D4Hist.load(key, cache)\nLoad from cache\n\n\n\nmodel.d4.D4Hist.to_cache()\nConvert to cacheable object.\nReturns: data, metadata tuple\n\n\n\n\n\nmodel.d4.DataTypes()\nEnum for getter method data types.",
+    "crumbs": [
+      "Tools",
+      "model.d4"
+    ]
+  },
+  {
+    "objectID": "reference/model.d4.html#classes",
+    "href": "reference/model.d4.html#classes",
+    "title": "model.d4",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nD4Hist\nClass that stores D4Hist data.\n\n\nDataTypes\nEnum for getter method data types.\n\n\n\n\n\nmodel.d4.D4Hist(\n    metadata_schema=dict(),\n    data,\n    feature=None,\n    path=None,\n    mask=None,\n    genome_size=None,\n)\nClass that stores D4Hist data.\nThis class is used to store data generated by d4tools stat. The optional feature parameter is used to store the feature that was used as input to d4tools stat.\n\n\n\n\n\nName\nDescription\n\n\n\n\ngenerate_cache_key\nGenerate a cache key for a given path, max_bins and annotation\n\n\nload\nLoad from cache\n\n\nto_cache\nConvert to cacheable object.\n\n\n\n\n\nmodel.d4.D4Hist.generate_cache_key(path, max_bins, annotation)\nGenerate a cache key for a given path, max_bins and annotation\n\n\n\nmodel.d4.D4Hist.load(key, cache)\nLoad from cache\n\n\n\nmodel.d4.D4Hist.to_cache()\nConvert to cacheable object.\nReturns: data, metadata tuple\n\n\n\n\n\nmodel.d4.DataTypes()\nEnum for getter method data types.",
+    "crumbs": [
+      "Tools",
+      "model.d4"
+    ]
+  },
+  {
+    "objectID": "reference/model.metadata.html",
+    "href": "reference/model.metadata.html",
+    "title": "model.metadata",
+    "section": "",
+    "text": "model.metadata\nMetadata base class and validation functions.\n\n\n\n\n\nName\nDescription\n\n\n\n\nMetadataBaseClass\nBase class for class that has metadata\n\n\n\n\n\nmodel.metadata.MetadataBaseClass(metadata_schema=dict())\nBase class for class that has metadata\n\n\n\n\n\nName\nDescription\n\n\n\n\ncache_key\nReturn cache key\n\n\n\n\n\n\n\n\n\nName\nDescription\n\n\n\n\ngenerate_cache_key\nGenerate and return cache key\n\n\nvalidate\nValidate metadata\n\n\n\n\n\nmodel.metadata.MetadataBaseClass.generate_cache_key(*args, **kwargs)\nGenerate and return cache key\n\n\n\nmodel.metadata.MetadataBaseClass.validate(value)\nValidate metadata\n\n\n\n\n\n\n\n\n\nName\nDescription\n\n\n\n\nvalidate\nValidate data\n\n\n\n\n\nmodel.metadata.validate(schema, data)\nValidate data",
+    "crumbs": [
+      "Tools",
+      "model.metadata"
+    ]
+  },
+  {
+    "objectID": "reference/model.metadata.html#classes",
+    "href": "reference/model.metadata.html#classes",
+    "title": "model.metadata",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nMetadataBaseClass\nBase class for class that has metadata\n\n\n\n\n\nmodel.metadata.MetadataBaseClass(metadata_schema=dict())\nBase class for class that has metadata\n\n\n\n\n\nName\nDescription\n\n\n\n\ncache_key\nReturn cache key\n\n\n\n\n\n\n\n\n\nName\nDescription\n\n\n\n\ngenerate_cache_key\nGenerate and return cache key\n\n\nvalidate\nValidate metadata\n\n\n\n\n\nmodel.metadata.MetadataBaseClass.generate_cache_key(*args, **kwargs)\nGenerate and return cache key\n\n\n\nmodel.metadata.MetadataBaseClass.validate(value)\nValidate metadata",
+    "crumbs": [
+      "Tools",
+      "model.metadata"
+    ]
+  },
+  {
+    "objectID": "reference/model.metadata.html#functions",
+    "href": "reference/model.metadata.html#functions",
+    "title": "model.metadata",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nvalidate\nValidate data\n\n\n\n\n\nmodel.metadata.validate(schema, data)\nValidate data",
+    "crumbs": [
+      "Tools",
+      "model.metadata"
+    ]
+  },
+  {
+    "objectID": "reference/tools.d4filter.html",
+    "href": "reference/tools.d4filter.html",
+    "title": "tools.d4filter",
+    "section": "",
+    "text": "tools.d4filter\nFilter d4 file on value range and output in BED format.\n\n\n\n\n\nName\nDescription\n\n\n\n\ncli\nCommand line interface for d4filter. Prints filtered results in\n\n\n\n\n\ntools.d4filter.cli(path, min_value, max_value)\nCommand line interface for d4filter. Prints filtered results in BED5 format to stdout.\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\npath\nstr\nInput D4 file.\nrequired\n\n\nmin_value\nint\nMinimum value (inclusive).\nrequired\n\n\nmax_value\nint\nMaximum value (inclusive).\nrequired",
+    "crumbs": [
+      "Tools",
+      "tools.d4filter"
+    ]
+  },
+  {
+    "objectID": "reference/tools.d4filter.html#functions",
+    "href": "reference/tools.d4filter.html#functions",
+    "title": "tools.d4filter",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\ncli\nCommand line interface for d4filter. Prints filtered results in\n\n\n\n\n\ntools.d4filter.cli(path, min_value, max_value)\nCommand line interface for d4filter. Prints filtered results in BED5 format to stdout.\n\n\n\n\n\nName\nType\nDescription\nDefault\n\n\n\n\npath\nstr\nInput D4 file.\nrequired\n\n\nmin_value\nint\nMinimum value (inclusive).\nrequired\n\n\nmax_value\nint\nMaximum value (inclusive).\nrequired",
+    "crumbs": [
+      "Tools",
+      "tools.d4filter"
+    ]
+  }
+]
