@@ -36,5 +36,8 @@ jobs:
           cache: true
           environments: dev
 
+      - name: Install package
+        run: python -m pip install --no-deps -e .
+
       - name: Run tests
         run: pixi run test

@@ -159,3 +159,4 @@ quarto = ">=1.8.25,<2"
 [tool.pixi.dependencies]
 jsonschema = ">=4.24.0,<5"
 d4tools = ">=0.3.11,<0.4"
+pip = ">=25.2,<26"
