@@ -1,40 +1,15 @@
+"""Filter d4 file on value range and output in BED format."""
+
 import sys
 
 import click
-import daiquiri
 import numpy as np
 import pandas as pd
 from pyd4 import D4File
 from tqdm import tqdm
 
-daiquiri.setup(level="WARN")  # noqa
-
-logger = daiquiri.getLogger("d4explorer-d4filter")
-
-
-def log_level(expose_value=False):
-    """Setup logging"""
-
-    def callback(ctx, param, value):
-        no_log_filter = ctx.params.get("no_log_filter")
-        if no_log_filter:
-            logger = daiquiri.getLogger("root")
-            logger.setLevel(value)
-        else:
-            loggers = ["d4explorer-d4filter"]
-            for logname in loggers:
-                logger = daiquiri.getLogger(logname)
-                logger.setLevel(value)
-        return
-
-    return click.option(
-        "--log-level",
-        default="INFO",
-        help="Logging level",
-        callback=callback,
-        expose_value=expose_value,
-        is_eager=False,
-    )
+from d4explorer.logging import cli_logger as logger
+from d4explorer.logging import log_level
 
 
 @click.command()
@@ -52,7 +27,13 @@ def log_level(expose_value=False):
 @log_level()
 def cli(path, min_value, max_value):
     """Command line interface for d4filter. Prints filtered results in
-    BED5 format to stdout."""
+    BED5 format to stdout.
+
+    Parameters:
+        path (str): Input D4 file.
+        min_value (int): Minimum value (inclusive).
+        max_value (int): Maximum value (inclusive).
+    """
     logger.info("Running d4filter")
     d4 = D4File(path)
     dflist = []

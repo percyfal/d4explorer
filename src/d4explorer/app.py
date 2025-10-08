@@ -1,16 +1,21 @@
-import daiquiri
+"""Main application for d4explorer.
+
+Provides the App class that is the main application for d4explorer.
+The App subclasses the Viewer class from panel and renders a
+panel.FastListTemplate.
+"""
+
 import panel as pn
 import param
 from panel.viewable import Viewer
 
+from d4explorer.logging import app_logger as logger
+
 from .datastore import DataStore, DataStoreSummarize
 
-daiquiri.setup(level="WARN")  # noqa
-
-
-logger = daiquiri.getLogger("d4explorer")
 pn.extension("vega", throttled=True)
 pn.extension(sizing_mode="stretch_width")
+pn.extension("tabulator")
 
 
 RAW_CSS = """

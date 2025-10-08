@@ -1,0 +1,68 @@
+project:
+  type: website
+  render:
+    - index.qmd
+    - reference/index.qmd
+    - reference/app.qmd
+    - reference/cache.qmd
+    - reference/config.qmd
+    - reference/logging.qmd
+    - reference/main.qmd
+    - reference/metadata.qmd
+    - reference/d4utils.commands.qmd
+    - reference/d4utils.d4iter.qmd
+    - reference/model.coverage.qmd
+    - reference/model.d4.qmd
+    - reference/model.feature.qmd
+    - reference/model.metadata.qmd
+    - reference/model.ranges.qmd
+    - reference/tools.d4filter.qmd
+    - reference/tools.summarize.qmd
+  pre-render:
+    - ../scripts/prepare.sh
+  preview:
+    port: 5009
+
+metadata-files:
+  - reference/_sidebar.yml
+
+format:
+  html:
+    css:
+      - reference/_styles-quartodoc.css
+
+quartodoc:
+  package: d4explorer
+  parser: google
+
+  sidebar:
+    file: "reference/_sidebar.yml"
+    style: docked
+    search: true
+    collapse-level: 2
+    contents:
+      - text: "Introduction"
+        href: index.qmd
+  css: reference/_styles-quartodoc.css
+
+  source_dir: ../src/d4explorer
+
+  sections:
+    - title: Tools
+      desc: d4explorer tools
+      contents:
+        - app
+        - cache
+        - config
+        - logging
+        - main
+        - metadata
+        - d4utils.commands
+        - d4utils.d4iter
+        - model.coverage
+        - model.d4
+        - model.feature
+        - model.metadata
+        - model.ranges
+        - tools.d4filter
+        - tools.summarize

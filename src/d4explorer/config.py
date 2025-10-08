@@ -1,4 +1,4 @@
-"""Config file.
+"""Configuration settings.
 
 This file stores configurations for the entire application such as figure
 dimensions and color schemes.

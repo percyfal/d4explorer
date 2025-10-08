@@ -1,13 +1,14 @@
-import daiquiri
+"""Cache management for d4explorer."""
+
 import diskcache
+
+from d4explorer.logging import app_logger as logger
 
 CACHEDIR = "cache"
 
 # Main cache instance
 # FIXME: Target for deletion
 cache = diskcache.Cache(CACHEDIR)
-
-logger = daiquiri.getLogger("d4explorer")
 
 
 class D4ExplorerCache:

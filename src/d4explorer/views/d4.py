@@ -1,4 +1,3 @@
-import daiquiri
 import holoviews as hv
 import hvplot.pandas  # noqa
 import numpy as np
@@ -14,9 +13,6 @@ from .config import COLORS
 
 hv.extension("bokeh")
 pn.extension("tabulator")
-
-
-logger = daiquiri.getLogger("d4explorer:view:d4")
 
 
 class View(Viewer):
@@ -125,7 +121,6 @@ class D4HistogramView(View):
                 title="Area plot",
                 xlabel="coverage",
             )
-
         return pn.Column(
             pn.pane.Markdown("# Coverage histogram"),
             pn.FlexBox(

@@ -1,10 +1,22 @@
-# d4explorer
+---
+title: d4explorer documentation
+---
 
-Simple interactive application to plot coverage data in [d4] format.
-The main purpose is to provide a tool for selecting coverage
-thresholds that define accessible sites in a non-model organism
-resequencing project for which it may be difficult to generate all
-sites VCF output.
+<!-- markdownlint-disable MD013 MD033 -->
+
+| <img src="./img/d4explorer-coverage.png" width="80%" alt="Screenshot of d4explorer coverage page"> |
+|:--:|
+| Screenshot of d4explorer coverage page |
+
+<!-- markdownlint-enable MD013 MD033 -->
+
+## About
+
+`d4explorer` is a simple interactive application to plot coverage data
+in [d4] format. The main purpose is to provide a tool for selecting
+coverage thresholds that define accessible sites in a non-model
+organism resequencing project for which it may be difficult to
+generate all sites VCF output.
 
 ## Quickstart
 
@@ -35,13 +47,5 @@ web page will display a list of datasets, and once loaded, the
 histograms are sampled to produce coverage plots over features. By
 modifying the coverage range and monitoring the feature size
 indicators you can decide on appropriate thresholds for your data.
-
-<!-- markdownlint-disable MD013 MD033 -->
-
-| <img src="./img/d4explorer-coverage.png" width="50%" alt="Screenshot of d4explorer coverage page"> |
-|:--:|
-| Screenshot of d4explorer coverage page |
-
-<!-- markdownlint-enable MD013 MD033 -->
 
 [d4]: <https://github.com/38/d4-format>

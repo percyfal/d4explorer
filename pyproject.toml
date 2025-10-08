@@ -6,7 +6,6 @@ dependencies = [
   "panel>=1.6.1",
   "hvplot>=0.11.0",
   "holoviews>=1.20.0",
-  "daiquiri>=3.2.5.1",
   "diskcache>=5.6.3",
   "pyd4>=0.3.9",
   "click>=8.1.7",
@@ -16,7 +15,7 @@ dependencies = [
   "param>=2.2.0",
 ]
 readme = "README.md"
-requires-python = ">= 3.11"
+requires-python = ">= 3.11,<=3.13"
 dynamic = ["version"]
 
 [dependency-groups]
@@ -80,7 +79,7 @@ ignore = ["N806"]
 known-first-party = ["d4explorer"]
 
 [tool.pixi.workspace]
-channels = ["conda-forge"]
+channels = ["conda-forge", "bioconda"]
 platforms = ["linux-64"]
 
 [tool.pixi.pypi-dependencies]
@@ -88,17 +87,46 @@ d4explorer = { path = ".", editable = true }
 
 [tool.pixi.tasks]
 
+[tool.pixi.tasks.dev]
+args = [{ "arg" = "port", default = "5507" }]
+cmd = "panel serve src/d4explorer --dev --show --args serve --port {{port}}"
+
+[tool.pixi.tasks.sandbox]
+args = [{ "arg" = "port", default = "5508" }]
+cmd = "panel serve src/d4explorer --dev --admin --show --port {{port}} --args sandbox tests/data/sum.d4 --annotation-file tests/data/annotation.gff.gz"
+
+[tool.pixi.feature.quartodoc.tasks.quartodoc]
+cmd = "quartodoc build"
+cwd = "docs"
+
+[tool.pixi.feature.quartodoc.tasks.preview]
+depends-on = [{ task = "quartodoc" }]
+cmd = "quarto preview"
+cwd = "docs"
+
+[tool.pixi.feature.quartodoc.tasks.render]
+depends-on = [{ task = "quartodoc" }]
+cmd = "quarto render"
+cwd = "docs"
+
+[tool.pixi.feature.quartodoc.tasks.publish]
+depends-on = [{ task = "quartodoc" }]
+cmd = "quarto publish gh-pages docs --no-browser"
+cwd = "docs"
+
 [tool.pixi.environments]
 default = { solve-group = "default" }
 dev = { features = ["dev"], solve-group = "default" }
 lint = { features = ["lint"], solve-group = "default" }
+quartodoc = { features = ["quartodoc"], solve-group = "default" }
 
 [tool.pixi.feature.dev.tasks]
 test = { cmd = "pytest -v -s tests" }
 
 [tool.pixi.feature.dev.dependencies]
 jupyterlab = ">=4.4.3,<5"
-
+pytest = ">=8.4.2,<9"
+pyright = ">=1.1.406,<2"
 
 [tool.pixi.feature.lint.tasks]
 actionlint = { cmd = "actionlint", env = { SHELLCHECK_OPTS = "-e SC2086" } }
@@ -122,6 +150,13 @@ typos = "*"
 actionlint = "*"
 go-shfmt = "*"
 taplo = "*"
+pylint = ">=3.3.8,<4"
+
+[tool.pixi.feature.quartodoc.dependencies]
+quartodoc = "*"
+quarto = ">=1.8.25,<2"
 
 [tool.pixi.dependencies]
 jsonschema = ">=4.24.0,<5"
+d4tools = ">=0.3.11,<0.4"
+pip = ">=25.2,<26"

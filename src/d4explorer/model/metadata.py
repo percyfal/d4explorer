@@ -1,3 +1,5 @@
+"""Metadata base class and validation functions."""
+
 import dataclasses
 
 from d4explorer.metadata import Schema

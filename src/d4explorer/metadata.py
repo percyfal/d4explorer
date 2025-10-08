@@ -1,3 +1,5 @@
+"""Module for handling JSONSchema metadata validation."""
+
 from __future__ import annotations
 
 import copy
@@ -6,11 +8,9 @@ import os
 import pprint
 from typing import Any, Mapping
 
-import daiquiri
 import jsonschema
 
-logger = daiquiri.getLogger("d4explorer")
-
+from d4explorer.logging import app_logger as logger
 
 D4ExplorerMetadataSchemaValidator = jsonschema.validators.extend(
     jsonschema.validators.Draft202012Validator
