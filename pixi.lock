@@ -1020,7 +1020,7 @@ packages:
   timestamp: 1749047748072
 - pypi: ./
   name: d4explorer
-  version: 0.2.1.dev1+g1c72802db
+  version: 0.2.1.dev1+g343e4f0f3.d20251008
   sha256: 045f18a6726c43c5db5b83a761f8e9d8873539a074547f64c35a7be9e3a54136
   requires_dist:
   - click>=8.1.7

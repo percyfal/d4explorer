@@ -44,7 +44,7 @@ jobs:
           cache: true
           environments: quartodoc
 
-      - run: echo "QUARTO_PYTHON=${GITHUB_WORKSPACE}/.pixi/envs/quarto/bin/python" >> $GITHUB_ENV
+      - run: echo "QUARTO_PYTHON=${GITHUB_WORKSPACE}/.pixi/envs/quartodoc/bin/python" >> $GITHUB_ENV
 
       - name: Render project without publishing
         env:
