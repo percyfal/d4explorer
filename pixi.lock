@@ -1008,7 +1008,7 @@ packages:
 - pypi: ./
   name: d4explorer
   version: 0.1.2.dev14+gc79799e62.d20251008
-  sha256: c56938cf729f2531025d094c00eb9bc6a6675ecc6597de0b93a7b7091c758a3e
+  sha256: 951418a5194f301990463c63b6bfbef06bc414ee78fc0d485a6e641e81031fa4
   requires_dist:
   - click>=8.1.7
   - diskcache>=5.6.3
